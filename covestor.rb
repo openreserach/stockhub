@@ -15,7 +15,7 @@ for page in 1..10 # fetch top investor's portfolio in first 10 pages
 		fund=line.split(/\//)[4]	#fund's name manager-to-fund is 1-to-m
 		transaction=web_proxy.get_response(URI.parse(line))
 		freq=transaction.body.match(/Average trades per month [0-9.]+/).to_s.match(/[0-9.]+/).to_s #trade frequency per month
-		perm=transaction.body.scan(/Past 30 days\<\/td\>\n\s+\<td class=\"numeric\"\>[0-9.]+%/).to_s.match(/[0-9]+.[0-9]%/).to_s #average monthly gain/loss
+		perm=transaction.body.scan(/Past 30 days\<\/td\>\n\s+\<td class=\"numeric\"\>-*[0-9.]+%/).to_s.match(/-*[0-9]+.[0-9]%/).to_s #average monthly gain/loss
 
 		dates = Array.new
 		transaction.body.scan(/"title">[0-9]{2}\/[0-9]{2}\/[0-9]{2}/).each do |date|	
