@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 export minrisk=1 #portfolio risk range from 1-5(highest)
 export maxrisk=4 
@@ -23,7 +23,7 @@ do
 			echo $i $date >> tmp1
 		done
 		i=0;>tmp2
-		cat tmp |egrep '^\s+Buy to cover\s+$|^\s+Sell short\s+$|^\s+Buy\s+|^\s+Sell\s+$' |while read action
+		cat tmp |egrep -o '[[:space:]]Buy to cover[[:space:]]|[[:space:]]Sell short[[:space:]]|[[:space:]]Buy[[:space:]]|[[:space:]]Sell[[:space:]]'|tr -d ' ' |while read action
 		do
 			i=`echo $i+1 |bc`
 			echo $i $action >> tmp2
@@ -41,7 +41,8 @@ do
 		do
 			i=`echo $i+1 |bc`
 			echo $i $price >> tmp4
-		done		
+		done
+		
 		join tmp1 tmp2 |join - tmp3 |join - tmp4 |while read line
 		do
 			echo $line $freq $perm $manager $fund  |awk  '{printf "%-10s %-10s %-10s %-10s %-10s %-10s %-30s %-20s\n", $4,$3,$5,$2,$6,$7,$8,$9}'
