@@ -30,10 +30,13 @@ do
 		done
 		
 		i=0;>tmp3
-		cat tmp |egrep -o '"http://stocks.covestor.com/[a-z]+" title="'|awk '{print $1}' |cut -d'/' -f4 |tr '"' ' ' | tr '[:lower:]' '[:upper:]'|uniq |while read stock 
+		cat tmp |egrep -o '"http://stocks.covestor.com/[a-z]+" title="'|awk '{print $1}' |cut -d'/' -f4 |tr '"' ' ' | tr '[:lower:]' '[:upper:]'|while read stock 
 		do
 			i=`echo $i+1 |bc`
-			echo $i $stock >> tmp3
+			j=`echo $i/2 |bc`
+			if [ $(expr $i % 2) -eq 0 ]; then 
+				echo $j $stock >> tmp3
+			fi
 		done
 		
 		i=0;>tmp4
