@@ -24,6 +24,9 @@ do
     fi
 done
 echo "================================"
+#gurufocus biz predicability
+export predstar=`curl "http://www.gurufocus.com/gurutrades/$1" |grep "Business Predictability" |egrep -o "[0-9].[0-9]-Star<|[0-9]-Star<"  |cut -d'-' -f1`
+echo -e "Predictability:\t" $predstar
 #MSN StockScouter
 curl "http://moneycentral.msn.com/investor/StockRating/srsmain.asp?Symbol=$1" > tmp
 #export MSNStockScouter=`cat tmp |egrep  "SRS[0-9]" |cut -d"." -f1|cut -d"/" -f2 |cut -c 4-5`
