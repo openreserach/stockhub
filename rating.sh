@@ -97,8 +97,10 @@ echo -e "USBull Signal\t" $signal
 echo -e "USBull Pattern\t" $pattern
 
 echo "Covestor Top Manager Current Holdings====================="
-echo -e "Manager\tAction\t\tPrice\t Date\t TradePerMonth\tReturn"
+echo "Stock Action Price Date Trade/Mon Return Manager Portfolio" |awk  '{printf "%-10s %-10s %-10s %-10s %-10s %-10s %-30s %-20s\n", $1,$2,$3,$4,$5,$6,$7,$8}'
 cat ./$covesterdump |grep -w $1
+echo "Manager Portfolio Sharp% Gain"|awk '{ printf "%-40s%-40s%10s%10s%\n", $1, $2,$3,$4 }'
+curl "http://stocks.covestor.com/$lower" |egrep -B 1000 -i "in the same sector" |egrep -A 1 'a href="http://covestor.com/[a-zA-Z]+|value positive|value negative' |egrep -o 'a href="http://covestor.com/[a-zA-Z\-]+/[a-zA-Z\-]+|[0-9]+.[0-9]+|-[0-9]+.[0-9]+' |sed 's/a href=\"http:\/\/covestor.com//g' |tr '\n' ' ' |sed 's/ \//\n/g' |sed 's/^\///g' |sed 's/\// /g' |awk '{ printf "%-40s%-40s%10s%10s%\n", $1, $2,$3,$4 }'
 
 echo "Radar Screen----------------------------------------"
 curl "http://www.grahaminvestor.com/screens/graham-intrinsic-value-stocks/" |egrep -o 'bc\?s=[A-Z.]+'|cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Graham Intrinsic Value/g"
