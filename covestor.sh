@@ -16,35 +16,10 @@ do
 		freq=`cat tmp |egrep -o "Average trades per month [0-9.]+" |egrep -o "[0-9.]+"`
 		perm=`cat tmp |egrep -A 2 'Past 30 days</td>'|egrep -o '\-[0-9]+.[0-9]+%|[0-9]+.[0-9]+%'`
 		
-		i=0;>tmp1		
-		cat  tmp |egrep 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "[0-9]{2}/[0-9]{2}/[0-9]{2}" |while read date 
-		do
-			i=`echo $i+1 |bc`
-			echo $i $date >> tmp1
-		done
-		i=0;>tmp2
-		cat tmp |egrep -o '[[:space:]]Buy to cover[[:space:]]|[[:space:]]Sell short[[:space:]]|[[:space:]]Buy[[:space:]]|[[:space:]]Sell[[:space:]]'|tr -d ' ' |while read action
-		do
-			i=`echo $i+1 |bc`
-			echo $i $action >> tmp2
-		done
-		
-		i=0;>tmp3
-		cat tmp |egrep -o '"http://stocks.covestor.com/[a-z]+" title="'|awk '{print $1}' |cut -d'/' -f4 |tr '"' ' ' | tr '[:lower:]' '[:upper:]'|while read stock 
-		do
-			i=`echo $i+1 |bc`
-			j=`echo $i/2 |bc`
-			if [ $(expr $i % 2) -eq 0 ]; then 
-				echo $j $stock >> tmp3
-			fi
-		done
-		
-		i=0;>tmp4
-		cat tmp|egrep 'numeric">\$[0-9]+.[0-9]+'  |egrep -o '\$[0-9]+.[0-9]+' |while read price
-		do
-			i=`echo $i+1 |bc`
-			echo $i $price >> tmp4
-		done
+		cat tmp |egrep 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "[0-9]{2}/[0-9]{2}/[0-9]{2}" |cat -n > tmp1
+		cat tmp |egrep -o '[[:space:]]Buy to cover[[:space:]]|[[:space:]]Sell short[[:space:]]|[[:space:]]Buy[[:space:]]|[[:space:]]Sell[[:space:]]'|tr -d ' '|cat -n > tmp2
+		cat tmp |egrep -A 2 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |grep -v class |grep -v '\-\-' |tr -d ' ' |sed '/^$/d' |sed -e 's/<td>//g' -e 's/<\/td>//g' |cat -n | sed -e 's/^[ \t]*//' > tmp3
+		cat tmp|egrep 'numeric">\$[0-9]+.[0-9]+'  |egrep -o '\$[0-9]+.[0-9]+' |cat -n > tmp4
 		
 		join tmp1 tmp2 |join - tmp3 |join - tmp4 |while read line
 		do
