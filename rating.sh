@@ -97,13 +97,14 @@ export pattern=`curl "http://www.americanbulls.com/SignalPage.aspx?lang=en&Ticke
 echo -e "USBull Signal\t" $signal 
 echo -e "USBull Pattern\t" $pattern
 
-echo "Covestor Top Manager Current Holdings====================="
+echo "Covestor Top Manager Recent Transactions=================="
 echo "Stock Action Price Date Trade/Mon Return Manager Portfolio" |awk  '{printf "%-10s %-10s %-10s %-10s %-10s %-10s %-30s %-20s\n", $1,$2,$3,$4,$5,$6,$7,$8}'
 grep -w $1 $covestorlog
+echo "Covestor Top Manager Current Holdings====================="
 echo "Manager Portfolio Sharp% Gain"|awk '{ printf "%-40s%-40s%10s%10s%\n", $1, $2,$3,$4 }'
 curl "http://stocks.covestor.com/$lower" |egrep -B 1000 -i "in the same sector" |egrep -A 1 'a href="http://covestor.com/[a-zA-Z]+|value positive|value negative' |egrep -o 'a href="http://covestor.com/[a-zA-Z\-]+/[a-zA-Z\-]+|[0-9]+.[0-9]+|-[0-9]+.[0-9]+' |sed 's/a href=\"http:\/\/covestor.com//g' |tr '\n' ' ' |sed 's/ \//\n/g' |sed 's/^\///g' |sed 's/\// /g' |awk '{ printf "%-40s%-40s%10s%10s%\n", $1, $2,$3,$4 }'
 
-echo "TheLion Top Manager Current Holdings====================="
+echo "TheLion Top Manager Recent Transactions==================="
 echo "User Stock Status Action Buydate Dummy Selldate dummy Buyprice Sellprice Gain%" |awk '{printf "%-15s %-5s %-10s %-7s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$7,$9,$10,$11}'
 grep -w $1 $thelionlog
 
@@ -117,7 +118,12 @@ curl "http://seekingalpha.com/analysis/investing-ideas/top-ideas" |egrep -o "/sy
 
 curl "http://www.wenxuecity.com/bbs/archive.php?page=0&keyword=Long&SubID=finance&year=current" |egrep  -o -i "long [A-Za-z]+"  |grep -v term|grep -v target |grep -v bar |grep -v shadow |grep -v time |grep -v driveway |grep -v position |tr '[:lower:]' '[:upper:]' |sed 's/LONG //g' |sort |uniq |egrep -w "$1$" |sed "s/$1/DaQianLongIdea/g"
 
-curl "http://www.insidercow.com/notLogin/buyByCompany.jsp" |egrep -o "company=[A-Z]+" |sort |uniq |cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Insider Buy/g"
+curl http://www.marketocracy.com/mds/teams |egrep -o "http://m100.marketocracy.com/[A-Za-z_]+" |while read portfolio
+do
+    curl "$portfolio/2portfolio/" |grep symbol |egrep -o ">[A-Z]+<" |sed -e 's/>//g' -e 's/<//g' |egrep -w "$1$" |sed "s/$1/MarketocracyTopHolding/g"
+done
+
+curl "http://www.insidercow.com/notLogin/buyByCompany.jsp?ORDER=asc&SORTBY=company_name&days=6" |egrep -o "company=[A-Z]+"|sort |uniq |cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Insider Buy/g"
 
 \rm -f tmp*
 
