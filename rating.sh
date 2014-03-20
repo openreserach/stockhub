@@ -29,13 +29,7 @@ echo "================================"
 export predstar=`curl "http://www.gurufocus.com/gurutrades/$1" |grep "Business Predictability" |egrep -o "[0-9].[0-9]-Star<|[0-9]-Star<"  |cut -d'-' -f1`
 echo -e "Predictability:\t" $predstar
 #MSN StockScouter
-curl "http://moneycentral.msn.com/investor/StockRating/srsmain.asp?Symbol=$1" > tmp
-#export MSNStockScouter=`cat tmp |egrep  "SRS[0-9]" |cut -d"." -f1|cut -d"/" -f2 |cut -c 4-5`
-export MSNStockScouter=`cat tmp |egrep  -o "StockScouter Rating: [0-9]{1,2}" |cut -d':' -f2 |sed 's/ //g'`
-export Fudamental=`cat tmp |grep -i Fundamental |grep -o ">[A-F]<" |cut -c 2`
-export Ownership=`cat tmp |grep -i Ownership |grep -o ">[A-F]<" |cut -c 2`
-export Valuation=`cat tmp |grep -i Valuation |grep -o ">[A-F]<" |cut -c 2`
-export Technical=`cat tmp |grep -i Technical |grep -o ">[A-F]<" |cut -c 2`
+export MSNStockScouter=`curl "http://investing.money.msn.com/investments/stock-ratings/?symbol=$1" |egrep -A 1 'class="rat"'  |tail -n 1 |tr -d ' '`
 echo -e "MSN Rating:\t"$MSNStockScouter
 
 #Crammer's MadMoney comments
@@ -55,9 +49,13 @@ curl "http://download.finance.yahoo.com/d/quotes.csv?s=$1,SPY&f=m8" |cat -v |sed
 export stoxline=`curl "http://www.stoxline.com/quote.php?symbol=BBW" |grep margin-bottom |grep "http://www.stoxline.com/pics/[0-9]s.png" |egrep  -o '[0-9]s.png' |sed 's/s.png/ stars/g'`
 echo -e "Stoxline:\t"$stoxline
 
-#MotleyFool's rating
-export star=`curl "http://caps.fool.com/Ticker/$1.aspx" |grep -A 2 "CAPS Rating" |egrep -o "[0-9] out of 5" |awk '{print $1}'`
-echo -e "MotelyFool:\t"$star
+#MotleyFool's rating to be replace motley api
+if [ ${FOOL_API_KEY+1} ] 
+then  #apply for your own free key at http://developer.fool.com/, and set it in environment variable FOOL_API_KEY
+export star=`curl "http://api.fool.com/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]"`
+echo -e "Motely(0-5):\t"$star
+fi
+
 
 #Trend Spotter
 trenspotter=`curl "http://www.stockta.com/cgi-bin/opinion.pl?symb=$1&num1=4&mode=stock"|sed 's/TR/\n/g' |grep "Trend Spotter"  |egrep -o ">Buy<|>Sell<|>Hold<" |sed -e 's/>//g' -e 's/<//g'`
