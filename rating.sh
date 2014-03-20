@@ -97,16 +97,26 @@ export pattern=`curl "http://www.americanbulls.com/SignalPage.aspx?lang=en&Ticke
 echo -e "USBull Signal\t" $signal 
 echo -e "USBull Pattern\t" $pattern
 
-echo "Covestor Top Manager Recent Transactions=================="
-echo "Stock Action Price Date Trade/Mon Return Manager Portfolio" |awk  '{printf "%-10s %-10s %-10s %-10s %-10s %-10s %-30s %-20s\n", $1,$2,$3,$4,$5,$6,$7,$8}'
-grep -w $1 $covestorlog
-echo "Covestor Top Manager Current Holdings====================="
-echo "Manager Portfolio Sharp% Gain"|awk '{ printf "%-40s%-40s%10s%10s%\n", $1, $2,$3,$4 }'
-curl "http://stocks.covestor.com/$lower" |egrep -B 1000 -i "in the same sector" |egrep -A 1 'a href="http://covestor.com/[a-zA-Z]+|value positive|value negative' |egrep -o 'a href="http://covestor.com/[a-zA-Z\-]+/[a-zA-Z\-]+|[0-9]+.[0-9]+|-[0-9]+.[0-9]+' |sed 's/a href=\"http:\/\/covestor.com//g' |tr '\n' ' ' |sed 's/ \//\n/g' |sed 's/^\///g' |sed 's/\// /g' |awk '{ printf "%-40s%-40s%10s%10s%\n", $1, $2,$3,$4 }'
+found=$(grep -w $1 $covestorlog)
+if [[ $? -eq 0 ]]; then
+	echo "Covestor Top Manager Recent Transactions=================="
+	echo "Stock Action Price Date Trade/Mon Return Manager Portfolio" |awk  '{printf "%-10s %-10s %-10s %-10s %-10s %-10s %-30s %-20s\n", $1,$2,$3,$4,$5,$6,$7,$8}'
+	grep -w $1 $covestorlog
+fi 
 
-echo "TheLion Top Manager Recent Transactions==================="
-echo "User Stock Status Action Buydate Dummy Selldate dummy Buyprice Sellprice Gain%" |awk '{printf "%-15s %-5s %-10s %-7s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$7,$9,$10,$11}'
-grep -w $1 $thelionlog
+found=$(curl "http://stocks.covestor.com/$lower" |egrep -B 1000 -i "in the same sector" |egrep -A 1 'a href="http://covestor.com/[a-zA-Z]+|value positive|value negative' |egrep -o 'a href="http://covestor.com/[a-zA-Z\-]+/[a-zA-Z\-]+|[0-9]+.[0-9]+|-[0-9]+.[0-9]+' |sed 's/a href=\"http:\/\/covestor.com//g' |tr '\n' ' ' |sed 's/ \//\n/g' |sed 's/^\///g' |sed 's/\// /g' |awk '{ printf "%-40s%-40s%10s%10s%\n", $1, $2,$3,$4 }')
+if [[ $? -eq 0 ]]; then
+	echo "Covestor Top Manager Current Holdings====================="
+	echo "Manager Portfolio Sharp% Gain"|awk '{ printf "%-40s%-40s%10s%10s%\n", $1, $2,$3,$4 }'
+	curl "http://stocks.covestor.com/$lower" |egrep -B 1000 -i "in the same sector" |egrep -A 1 'a href="http://covestor.com/[a-zA-Z]+|value positive|value negative' |egrep -o 'a href="http://covestor.com/[a-zA-Z\-]+/[a-zA-Z\-]+|[0-9]+.[0-9]+|-[0-9]+.[0-9]+' |sed 's/a href=\"http:\/\/covestor.com//g' |tr '\n' ' ' |sed 's/ \//\n/g' |sed 's/^\///g' |sed 's/\// /g' |awk '{ printf "%-40s%-40s%10s%10s%\n", $1, $2,$3,$4 }'
+fi
+
+found=$(grep -w $1 $thelionlog)
+if [[ $? -eq 0 ]]; then
+	echo "TheLion Top Manager Recent Transactions==================="
+	echo "User Stock Status Action Buydate Dummy Selldate dummy Buyprice Sellprice Gain%" |awk '{printf "%-15s %-5s %-10s %-7s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$7,$9,$10,$11}'
+	grep -w $1 $thelionlog
+fi
 
 echo "Radar Screen----------------------------------------"
 curl "http://www.grahaminvestor.com/screens/graham-intrinsic-value-stocks/" |egrep -o 'bc\?s=[A-Z.]+'|cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Graham Intrinsic Value/g"
