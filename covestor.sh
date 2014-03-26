@@ -18,7 +18,7 @@ do
 		
 		cat tmp |egrep 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "[0-9]{2}/[0-9]{2}/[0-9]{2}" |cat -n > tmp1
 		cat tmp |egrep -o '[[:space:]]Buy to cover[[:space:]]|[[:space:]]Sell short[[:space:]]|[[:space:]]Buy[[:space:]]|[[:space:]]Sell[[:space:]]'|tr -d ' '|cat -n > tmp2
-		cat tmp |egrep -A 2 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |grep -v class |grep -v '\-\-' |tr -d ' ' |sed '/^$/d' |sed -e 's/<td>//g' -e 's/<\/td>//g' |cat -n | sed -e 's/^[ \t]*//' > tmp3
+		cat tmp |egrep -A 2 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "http://stocks.covestor.com/[a-z]+" |cut -d'/' -f4 |tr [[:lower:]] [[:upper:]] |cat -n |sed -e 's/^[ \t]*//' >tmp3
 		cat tmp|egrep 'numeric">\$[0-9]+.[0-9]+'  |egrep -o '\$[0-9]+.[0-9]+' |cat -n > tmp4
 		
 		join tmp1 tmp2 |join - tmp3 |join - tmp4 |while read line
