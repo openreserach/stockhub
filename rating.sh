@@ -7,13 +7,16 @@ export redditchallenge2014="redditchallenge2014.log"
 export daqian1="daqian1.log"
 export daqian2="daqian2.log"
 
->tmp
-export price=`curl "http://finance.yahoo.com/q?s=$1" |egrep -o 'yfs_l84_[a-z]+">[0-9]+.[0-9]+' |cut -d'>' -f2`
+curl "http://finance.yahoo.com/q?s=$1" >tmp
+export price=`cat tmp |egrep -o 'yfs_l84_[a-z]+">[0-9]+.[0-9]+' |cut -d'>' -f2`
+export updownpercent=`cat tmp | grep $1 |egrep  -o "\([0-9]+.[0-9]+%\)" |head -n 1`
+export updown=`cat tmp |grep $1 |egrep  -o 'alt="Up"|alt="Down"' |head -n 1 |cut -d'=' -f2 |sed -e 's/"//g' -e 's/Up/+/g' -e 's/Down/-/g'` 
+export name=`cat tmp|egrep $1 |egrep 'content="'|egrep "q?s=$1"|cut -d',' -f2`
 export time=`date +%m/%d/%Y`
-echo $1:$price $time
+echo $1:$price $updown$updownpercent $time
+echo $name
 
 curl "http://www.finviz.com/quote.ashx?t=$1" > tmp
-cat tmp|grep center |grep '_blank' |cut -d'>' -f5 |cut -d'<' -f1
 cat tmp|grep center |grep fullview-links |grep tab-link |cut -d'>' -f4,6,8 |sed 's/<\/a/ /g'
 echo "FA color-coded=============================="
 for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'EPS next 5Y' 'Dividend %'
@@ -73,12 +76,12 @@ do
 done
 
 #Social Picker's rating; slow and comments out
-curl "http://www.socialpicks.com/stock/$upper/sentiment" > tmp
-socialpicker=`cat tmp |egrep -B 3 "\([0-9]+ ratings\)" |head -n 1 |cut -d'>' -f3- |cut -d'<' -f1`
-socialstar=`cat tmp |egrep -o "graphic_star_big.gif" |wc -l`
-socialhalfstar=`cat tmp |egrep -o "graphic_star_big_half.gif" |wc -l`
-socialstarnum=`echo "scale=1;$socialstar + $socialhalfstar/2" |bc`
-echo -e "SocialPicker:\t"$socialpicker" "$socialstarnum" stars"
+#curl "http://www.socialpicks.com/stock/$upper/sentiment" > tmp
+#socialpicker=`cat tmp |egrep -B 3 "\([0-9]+ ratings\)" |head -n 1 |cut -d'>' -f3- |cut -d'<' -f1`
+#socialstar=`cat tmp |egrep -o "graphic_star_big.gif" |wc -l`
+#socialhalfstar=`cat tmp |egrep -o "graphic_star_big_half.gif" |wc -l`
+#socialstarnum=`echo "scale=1;$socialstar + $socialhalfstar/2" |bc`
+#echo -e "SocialPicker:\t"$socialpicker" "$socialstarnum" stars"
 
 #GStock
 export lower=`echo $1|tr A-Z a-z`
@@ -119,34 +122,34 @@ if [[ $? -eq 0 ]]; then
 	echo "User Stock Status Action Buydate Dummy Selldate dummy Buyprice Sellprice Gain%" |awk '{printf "%-15s %-5s %-10s %-7s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$7,$9,$10,$11}'
 	grep -w $1 $thelionlog
 fi
-found=$(grep -w $1 $practicestocksforfun)
+
+
+activitythismonth=`date +%m/[0-9][0-9]/%y |sed 's/^0//'`
+found=$(grep -w $1 $practicestocksforfun |grep $activitythismonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch Practive-stock-for-fun game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	activitythismonth=`date +%m/[0-9][0-9]/%y |sed 's/^0//'`
 	grep -w $1 $practicestocksforfun |grep $activitythismonth
 fi
-found=$(grep -w $1 $redditchallenge2014)
+found=$(grep -w $1 $redditchallenge2014 |grep $activitythismonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch RedditChallenge2014 game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	activitythismonth=`date +%m/[0-9][0-9]/%y |sed 's/^0//'`
 	grep -w $1 $redditchallenge2014 |grep $activitythismonth
 fi
-found=$(grep -w $1 $daqian1)
+found=$(grep -w $1 $daqian1 |grep $activitythismonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch DaQian-1 game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	activitythismonth=`date +%m/[0-9][0-9]/%y |sed 's/^0//'`
 	grep -w $1 $daqian1 |grep $activitythismonth
 fi
-found=$(grep -w $1 $daqian2)
+found=$(grep -w $1 $daqian2 |grep $activitythismonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch DaQian-2 game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	activitythismonth=`date +%m/[0-9][0-9]/%y |sed 's/^0//'`
 	grep -w $1 $daqian2 |grep $activitythismonth
 fi
+
 echo "Radar Screen----------------------------------------"
 curl "http://www.grahaminvestor.com/screens/graham-intrinsic-value-stocks/" |egrep -o 'bc\?s=[A-Z.]+'|cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Graham Intrinsic Value/g"
 curl "http://www.grahaminvestor.com/screens/low-price-to-operating-cash-flow-ratio/" |egrep -o 'bc\?s=[A-Z.]+'|cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Low Price to Operating CashFlow Raio/g"
