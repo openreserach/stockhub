@@ -105,7 +105,7 @@ found=$(curl "http://stocks.covestor.com/$lower" |egrep -B 1000 -i "in the same 
 if [[ $? -eq 0 ]]; then
 	echo "Covestor Top Manager Current Holdings====================="
 	echo "Manager Portfolio Sharp% Gain LongShort Price"|awk '{ printf "%-40s%-40s%10s%10s%10s%10s\n", $1, $2,$3,$4,$5,$6}'
-	curl "http://stocks.covestor.com/$lower" |egrep -B 1000 -i "in the same sector" |egrep -A 1 'a href="http://covestor.com/[a-zA-Z]+|value positive|value negative' |egrep -o 'a href="http://covestor.com/[a-zA-Z\-]+/[a-zA-Z\-]+|[0-9]+.[0-9]+|-[0-9]+.[0-9]+' |sed 's/a href=\"http:\/\/covestor.com//g' |tr '\n' ' ' |sed 's/ \//\n/g' |sed 's/^\///g' |sed 's/\// /g' |while read own
+	echo $found |egrep -o "http://covestor.com/[a-zA-Z\-]+/[a-zA-Z\-]+|[0-9]+.[0-9]+|-[0-9]+.[0-9]+" |sed "s/http:\/\/covestor.com//g" |tr '\n' ' ' |sed 's/ \//\n/g' |sed 's/^\///g' |sed 's/\// /g' |awk '{print $0}' |while read own
 	do 		
 		export manager=`echo $own|awk '{print $1}'`
 		export portfolio=`echo $own|awk '{print $2}'`				
@@ -123,30 +123,32 @@ if [[ $? -eq 0 ]]; then
 fi
 
 
-activitythismonth=`date +%m/[0-9][0-9]/%y |sed 's/^0//'`
-found=$(grep -w $1 $practicestocksforfun |grep $activitythismonth)
+export thismonth=`date +%m |sed 's/^0//g'`
+export lastmonth=`date -d "1 month ago" +%m |sed 's/^0//g'`
+export activitymonth="?$thismonth/[0-9][0-9]/??`date +%y`|?$lastmonth/[0-9][0-9]/??`date +%y`"
+found=$(grep -w $1 $practicestocksforfun |egrep $activitymonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch Practive-stock-for-fun game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	grep -w $1 $practicestocksforfun |grep $activitythismonth
+	grep -w $1 $practicestocksforfun |egrep $activitymonth
 fi
-found=$(grep -w $1 $redditchallenge2014 |grep $activitythismonth)
+found=$(grep -w $1 $redditchallenge2014 |egrep $activitymonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch RedditChallenge2014 game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	grep -w $1 $redditchallenge2014 |grep $activitythismonth
+	grep -w $1 $redditchallenge2014 |egrep $activitymonth
 fi
-found=$(grep -w $1 $daqian1 |grep $activitythismonth)
+found=$(grep -w $1 $daqian1 |egrep $activitymonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch DaQian-1 game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	grep -w $1 $daqian1 |grep $activitythismonth
+	grep -w $1 $daqian1 |egrep $activitymonth
 fi
-found=$(grep -w $1 $daqian2 |grep $activitythismonth)
+found=$(grep -w $1 $daqian2 |egrep $activitymonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch DaQian-2 game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	grep -w $1 $daqian2 |grep $activitythismonth
+	grep -w $1 $daqian2 |egrep $activitymonth
 fi
 
 echo "Radar Screen----------------------------------------"
