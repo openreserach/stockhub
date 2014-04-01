@@ -10,7 +10,7 @@ echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s
 		do	#Transactions	
 			name=`echo $url|cut -d'&' -f1 |cut -c1-29`
 			rank=`expr $rank + 1`		
-			curl "http://www.marketwatch.com/game/$game/portfolio/transactionhistory?name=$url" |egrep -A 12 "/investing/stock/" |grep -v numeric  |sed -e 's/<td>//g'  -e 's/<\/td>//g'  -e 's/<a href="\/investing\/stock\///g' -e 's/<\/a>//g' -e 's/^[ \t]*//g'  -e '/^$/d' |cut -d'"' -f1 |tr '\n' ' ' |sed -e 's/\-\-/\n/g' |sed "s/<span title='InsufficientBuyingPower'>(Canceled)<\/span>//g" |awk '{print $0}' |while read trans
+			curl "http://www.marketwatch.com/game/$game/portfolio/transactionhistory?name=$url" |egrep -A 12 "/investing/stock/" |grep -v numeric  |sed -e 's/<td>//g'  -e 's/<\/td>//g'  -e 's/<a href="\/investing\/stock\///g' -e 's/<\/a>//g' -e 's/^[ \t]*//g'  -e '/^$/d' |cut -d'"' -f1 |dos2unix |tr '\n' ' ' |sed -e 's/\-\-/\n/g' |sed "s/<span title='InsufficientBuyingPower'>(Canceled)<\/span>//g" |awk '{print $0}' |while read trans
 			do			
 				echo $name $rank $trans |sed 's/\%20/-/g' |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$8,$9,$10}' >> $game.log
 			done			
