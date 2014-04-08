@@ -125,30 +125,30 @@ fi
 
 export thismonth=`date +%m |sed 's/^0//g'`
 export lastmonth=`date -d "1 month ago" +%m |sed 's/^0//g'`
-export activitymonth="?$thismonth/[0-9][0-9]/??`date +%y`|?$lastmonth/[0-9][0-9]/??`date +%y`"
-found=$(grep -w $1 $practicestocksforfun |egrep $activitymonth)
+export activitymonth="(0)?$thismonth/[0-9]+/(20)?`date +%y`|(0)?$lastmonth/[0-9]+/(20)?`date +%y`"
+found=$(grep -w $1 $practicestocksforfun |egrep "$activitymonth")
 if [[ $? -eq 0 ]]; then
-	echo "MarketWatch Practive-stock-for-fun game Top players Recent Transactions==================="
+	echo "MarketWatch Practice-stock-for-fun game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	grep -w $1 $practicestocksforfun |egrep $activitymonth
+	grep -w $1 $practicestocksforfun |egrep "$activitymonth"
 fi
 found=$(grep -w $1 $redditchallenge2014 |egrep $activitymonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch RedditChallenge2014 game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	grep -w $1 $redditchallenge2014 |egrep $activitymonth
+	grep -w $1 $redditchallenge2014 |egrep "$activitymonth"
 fi
 found=$(grep -w $1 $daqian1 |egrep $activitymonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch DaQian-1 game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	grep -w $1 $daqian1 |egrep $activitymonth
+	grep -w $1 $daqian1 |egrep "$activitymonth"
 fi
 found=$(grep -w $1 $daqian2 |egrep $activitymonth)
 if [[ $? -eq 0 ]]; then
 	echo "MarketWatch DaQian-2 game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	grep -w $1 $daqian2 |egrep $activitymonth
+	grep -w $1 $daqian2 |egrep "$activitymonth"
 fi
 
 echo "Radar Screen----------------------------------------"
