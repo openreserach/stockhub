@@ -14,7 +14,6 @@ The tool is implemented by light-weighted shell scripts. You can run it on any L
 
 Disclaimer: Totally for fun. 
 ==================================================================================================================
-
 $ ./rating.sh AAPL
 AAPL:530.22 +(1.30%) 04/09/2014
 Apple Inc.
