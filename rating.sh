@@ -105,13 +105,15 @@ found=$(curl "http://stocks.covestor.com/$lower" |egrep -B 1000 -i "in the same 
 if [[ $? -eq 0 ]]; then
 	echo "Covestor Top Manager Current Holdings====================="
 	echo "Manager Portfolio Sharp% Gain LongShort Price"|awk '{ printf "%-40s%-40s%10s%10s%10s%10s\n", $1, $2,$3,$4,$5,$6}'
-	echo $found |egrep -o "http://covestor.com/[a-zA-Z\-]+/[a-zA-Z\-]+|[0-9]+.[0-9]+|-[0-9]+.[0-9]+" |sed "s/http:\/\/covestor.com//g" |tr '\n' ' ' |sed 's/ \//\n/g' |sed 's/^\///g' |sed 's/\// /g' |awk '{print $0}' |while read own
+	echo $found |egrep -o "http://covestor.com/[a-zA-Z0-9\-]+/[a-zA-Z0-9\-]+|[0-9]+.[0-9]+|-[0-9]+.[0-9]+" |sed "s/http:\/\/covestor.com//g" |tr '\n' ' ' |sed 's/ \//\n/g' |sed 's/^\///g' |sed 's/\// /g' |awk '{print $1" "$2" "$3" "$4}' |while read own
 	do 		
 		export manager=`echo $own|awk '{print $1}'`
 		export portfolio=`echo $own|awk '{print $2}'`				
+		export sharp=`echo $own|awk '{print $3}'`				
+		export gain=`echo $own|awk '{print $4}'`				
 		export longshort=`curl "http://covestor.com/$manager/$portfolio" |grep -A 10 "<td><a href=\"http://stocks.covestor.com/$lower" |head -n 12 |tail -n 3 |head -n 1|sed -e 's/Sell short/Short/g' -e 's/Buy to cover/Cover/g'`
 		export price=`curl "http://covestor.com/$manager/$portfolio" |grep -A 10 "<td><a href=\"http://stocks.covestor.com/$lower" |head -n 12 |tail -n 1 |cut -d'>' -f2 |cut -d'<' -f1`
-		echo $own $longshort $price |awk '{ printf "%-40s%-40s%10s%10s%10s%10s\n", $1, $2,$3,$4,$5,$6}'
+		echo $manager $portfolio $sharp $gain $longshort $price |awk '{ printf "%-40s%-40s%10s%10s%10s%10s\n", $1, $2,$3,$4,$5,$6}'
 	done
 fi
 
