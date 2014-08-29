@@ -1,4 +1,4 @@
-#!/bin.sh
+#!/bin/sh
 
 ./covestor.sh > covestor.log
 ./thelion.sh > thelion.log
