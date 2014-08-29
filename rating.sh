@@ -171,9 +171,9 @@ done
 curl "http://www.insidercow.com/notLogin/buyByCompany.jsp?ORDER=asc&SORTBY=company_name&days=6" |egrep -o "company=[A-Z]+"|sort |uniq |cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Insider Buy/g"
 
 export current=`curl "http://dqstock.com/dqstock/" |egrep -o "gameid=[0-9]+" |head -n 1`
-export dqpicks=`curl "http://dqstock.com/dqstock/?p=results&$current" |egrep -o ">\+ [A-Z]+<|>- [A-Z]+<" |sed -e 's/>//g' -e 's/<//g' -e 's/ //g' |egrep -i $1 |tr -d '\n'`
-echo "DQ picks: $dqpicks"
-
-
+export dqpicks=`curl "http://dqstock.com/dqstock/?p=results&$current" |egrep -o ">\+ [A-Z]+<|>- [A-Z]+<" |sed -e 's/>//g' -e 's/<//g' -e 's/ //g' |egrep -w -i $1 |tr -d '\n'`
+if [[ -n $dqpicks ]]; then
+    echo "DQ picks: $dqpicks"
+fi
 \rm -f tmp*
 
