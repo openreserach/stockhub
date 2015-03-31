@@ -17,7 +17,7 @@ do
 		perm=`cat tmp |egrep -A 2 'Past 30 days</td>'|egrep -o '\-[0-9]+.[0-9]+%|[0-9]+.[0-9]+%'`
 		
 		cat tmp |egrep 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "[0-9]{2}/[0-9]{2}/[0-9]{2}" |cat -n > tmp1
-		cat tmp |egrep -o '^\s+Buy to cover\s+|^\s+Sell short\s+|^\s+Buy\s+|^\s+Sell\s+'|tr -d ' '|cat -n > tmp2
+		cat tmp |egrep -o '^\s+Buy to cover\s+$|^\s+Sell short\s+$|^\s+Buy\s+$|^\s+Sell\s+$'|tr -d ' '|cat -n > tmp2
 		cat tmp |egrep -A 2 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "http://stocks.covestor.com/[a-z]+" |cut -d'/' -f4 |tr [[:lower:]] [[:upper:]] |cat -n |sed -e 's/^[ \t]*//' >tmp3
 		cat tmp|egrep 'numeric">\$[0-9]+.[0-9]+'  |egrep -o '\$[0-9]+.[0-9]+' |cat -n > tmp4
 		
