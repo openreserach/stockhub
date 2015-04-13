@@ -34,8 +34,8 @@ echo "================================"
 export predstar=`curl "http://www.gurufocus.com/gurutrades/$1" |grep "Business Predictability" |egrep -o "[0-9].[0-9]-Star<|[0-9]-Star<"  |cut -d'-' -f1`
 echo -e "Predictability:\t" $predstar
 #MSN StockScouter
-export MSNStockScouter=`curl "http://investing.money.msn.com/investments/stock-ratings/?symbol=$1" |egrep -A 1 'class="rat"'  |tail -n 1 |tr -d ' '`
-echo -e "MSN Rating:\t"$MSNStockScouter
+#export MSNStockScouter=`curl "http://investing.money.msn.com/investments/stock-ratings/?symbol=$1" |egrep -A 1 'class="rat"'  |tail -n 1 |tr -d ' '`
+#echo -e "MSN Rating:\t"$MSNStockScouter
 
 #Crammer's MadMoney comments
 export madmoneyurl="http://madmoney.thestreet.com/07/index.cfm?page=lookup"
@@ -51,25 +51,26 @@ echo -e "Crammer:\t"$maddate $madbuysell $madvalue $madchange
 curl "http://download.finance.yahoo.com/d/quotes.csv?s=$1,SPY&f=m8" |cat -v |sed -e 's/%//g' -e 's/ //g' -e 's/\^M//g' |tr '\n' ' ' |awk '{print  "50MA vs. S&P:\t" $1" vs. "$2}'
 
 #stoxline rating
-export stoxline=`curl "http://www.stoxline.com/quote.php?symbol=BBW" |grep margin-bottom |grep "http://www.stoxline.com/pics/[0-9]s.png" |egrep  -o '[0-9]s.png' |sed 's/s.png/ stars/g'`
+export stoxline=`curl "http://www.stoxline.com/quote.php?symbol=$1" |grep margin-bottom |grep "http://www.stoxline.com/pics/[0-9]s.png" |egrep  -o '[0-9]s.png' |sed 's/s.png/ stars/g'`
 echo -e "Stoxline:\t"$stoxline
 
 #Zacks Rank
-export zacksrank=`curl "http://www.zacks.com/stock/quote/$1" |grep 'Zacks Rank : ' |cut -d'>' -f2- |cut -d'<' -f1`
-export zacksindustry=`curl "http://www.zacks.com/stock/quote/$1" |egrep -A 1 '>Zacks Industry Rank</th' |tail -n 1 |cut -d'>' -f3- |cut -d'<' -f1`
-echo $zacksrank","$zacksindustry
+export zacksrank=`curl "http://www.zacks.com/stock/quote/$1" |grep 'Zacks Rank : ' |cut -d'>' -f2- |cut -d'<' -f1 |cut -d':' -f2`
+export zacksindustry=`curl "http://www.zacks.com/stock/quote/$1" |egrep -A 1 '>Zacks Industry Rank <sup' |tail -n 1 |cut -d'>' -f3- |cut -d'<' -f1`
+export zacksstyle=` curl "http://www.zacks.com/stock/quote/$1" |egrep -A 4 '<span>Style Scores <sup' |tail -n 3 |sed -e 's/<span class="composite_val">//g' -e 's/<\/span>//g' |tr -d '\n'  |sed -e 's/ //g' -e 's/|/ /g'`
+echo -e "Zacks Rank:\t"$zacksrank" ; "$zacksindustry" ; "$zacksstyle
 
 #MotleyFool's rating to be replace motley api
 if [ ${FOOL_API_KEY+1} ] 
 then  #apply for your own free key at http://developer.fool.com/, and set it in environment variable FOOL_API_KEY
-export star=`curl "http://api.fool.com/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]"`
-echo -e "Motely(0-5):\t"$star
+export star=`curl "http://www.fool.com/a/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]"`
+echo -e "MotelyFool:\t"$star
 fi
 
 
 #Trend Spotter
-trenspotter=`curl "http://www.stockta.com/cgi-bin/opinion.pl?symb=$1&num1=4&mode=stock"|sed 's/TR/\n/g' |grep "Trend Spotter"  |egrep -o ">Buy<|>Sell<|>Hold<" |sed -e 's/>//g' -e 's/<//g'`
-echo -e "Trend Spotter:\t"$trenspotter
+#trenspotter=`curl "http://www.stockta.com/cgi-bin/opinion.pl?symb=$1&num1=4&mode=stock"|sed 's/TR/\n/g' |grep "Trend Spotter"  |egrep -o ">Buy<|>Sell<|>Hold<" |sed -e 's/>//g' -e 's/<//g'`
+#echo -e "Trend Spotter:\t"$trenspotter
 
 #Stock Picker rating
 upper=`echo $1|tr a-z A-Z`
@@ -92,8 +93,8 @@ echo -e "GuruFairValue:\t" $fairvalue
 done
 
 #TA pattern
-export signal=`curl "http://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker=$1" |grep "MainContent_LastSignal"|egrep -o ">[A-Z ]+</font>" |cut -d'<' -f1|cut -d'>' -f2`
-export pattern=`curl "http://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker=$1" |grep "MainContent_LastPattern"  |tail -n 1 | cut -d'>' -f3- |cut -d'<' -f1`
+export signal=`curl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker=$1" |grep "MainContent_LastSignal"|egrep -o ">[A-Z ]+</font>" |cut -d'<' -f1|cut -d'>' -f2`
+export pattern=`curl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker=$1" |grep "MainContent_LastPattern"  |tail -n 1 | cut -d'>' -f3- |cut -d'<' -f1`
 echo -e "USBull Signal\t" $signal 
 echo -e "USBull Pattern\t" $pattern
 
@@ -133,13 +134,13 @@ export lastmonth=`date -d "1 month ago" +%m |sed 's/^0//g'`
 export activitymonth="(0)?$thismonth/[0-9]+/(20)?`date +%y`|(0)?$lastmonth/[0-9]+/(20)?`date +%y`"
 found=$(grep -w $1 $daqian1 |egrep $activitymonth)
 if [[ $? -eq 0 ]]; then
-	echo "MarketWatch DaQian-1 game Top players Recent Transactions==================="
+	echo "MarketWatch DaQian weekly game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
 	grep -w $1 $daqian1 |egrep "$activitymonth"
 fi
 found=$(grep -w $1 $daqian2 |egrep $activitymonth)
 if [[ $? -eq 0 ]]; then
-	echo "MarketWatch DaQian-2 game Top players Recent Transactions==================="
+	echo "MarketWatch DaQian monthly game Top players Recent Transactions==================="
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
 	grep -w $1 $daqian2 |egrep "$activitymonth"
 fi
