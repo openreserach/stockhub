@@ -1,4 +1,17 @@
-#!/bin/sh
+#!/bin/bash
+
+
+export UrlHighestRatedNewPlayers="http://caps.fool.com/Ajax/GetStatsPageData.aspx?statsmajor=PlayerStats&statsminor=HRNP&ViewMode=Detailed"
+
+\rm cookie
+curl -c cookie -b cookie $UrlHighestRatedNewPlayers >tmp$$ 
+export Lines=`cat tmp$$ |wc -l`
+while [[ $Lines -lt 100 ]]; do #do until page containing data generated
+     curl -c cookie -b cookie $UrlHighestRatedNewPlayers > tmp$$	
+     export Lines=`cat tmp$$ |wc -l`
+done
+cat tmp$$ |egrep  -o '/player/\w+.aspx' |cut -d'/' -f3 |cut -d'.' -f1 > fooltopnewplayers
+
 
 export daysago=0
 if [ $1 ]; then
@@ -15,3 +28,5 @@ do
 		echo $player $rank $trans |awk '{printf "%-20s%-10s%-10s%-15s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7}'
 	done
 done
+
+\rm tmp$$ 
