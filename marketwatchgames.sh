@@ -1,10 +1,11 @@
 #!/bin/bash
 
 #hand pick stock trading games from marketwatch 30K games
-export wxcweekly=`curl "http://www.marketwatch.com/game/find?sort=CreateDate&descending=True&difficulty=all&search=wxc" |egrep -o 'wxc-dq-weekly-game-[0-9]+' |head -n 1`
-export wxcmonthly=`curl "http://www.marketwatch.com/game/find?sort=CreateDate&descending=True&difficulty=all&search=wxc" |egrep -o 'wxc[a-z\-]+2015-game' |head -n 1`
+#export wxcweekly=`curl "http://www.marketwatch.com/game/find?sort=CreateDate&descending=True&difficulty=all&search=wxc" |egrep -o 'wxc-dq-weekly-game-[0-9]+' |head -n 1`
+export wxcmonthly=`curl "http://www.marketwatch.com/game/find?sort=CreateDate&descending=True&difficulty=all&search=wxc" |egrep -o 'wxc-dq-game-[0-9]+' |head -n 1` 
+#export wxcmonthly=`curl "http://www.marketwatch.com/game/find?sort=CreateDate&descending=True&difficulty=all&search=wxc" |egrep -o 'wxc[a-z\-]+2015-game' |head -n 1`
 
-for game in $wxcweekly $wxcmonthly
+for game in $wxcmonthly
 do #marketwatch.com stock trading games/contest of interest
 echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}' >$game.log
 	for page in 0 10 20 
