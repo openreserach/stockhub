@@ -6,7 +6,7 @@ export maxrisk=4
 for page in `seq 1 20`
 do
 	[ $page -eq 1 ] && _page=? || _page='page/'$page'/?'
-	url='http://search.covestor.com/'$_page'orderby=performance&portfoliotype=singlemanager&riskscoremax='$maxrisk'&riskscoremin='$minrisk
+	url='http://search.covestor.com/'$_page'orderby=performance&riskscoremax='$maxrisk'&riskscoremin='$minrisk
 	curl $url |egrep -o "http://covestor.com/[a-zA-Z-]+/[a-zA-Z-]+" |sort |uniq |while read line
 	do
 		manager=`echo $line|cut -d'/' -f4`
@@ -27,4 +27,4 @@ do
 		done 		
 	done
 done
-\rm tmp*
+\rm -f tmp*
