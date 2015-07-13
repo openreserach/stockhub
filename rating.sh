@@ -155,5 +155,9 @@ done
 
 curl "http://www.insidercow.com/notLogin/buyByCompany.jsp?ORDER=asc&SORTBY=company_name&days=6" |egrep -o "company=[A-Z]+"|sort |uniq |cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Insider Buy/g"
 
+echo "Headline/Article/Blogs----------------------------------------"
+curl "http://finance.yahoo.com/q?s=$1" |grep 'yfi_quote_headline' |sed 's/;">/\n/g' |grep cite |cut -d '<' -f1 |awk '{print "<YAHOO>"$0}' |head -n 2
+curl "http://seekingalpha.com/symbol/$1" |grep 'qp_latest' |egrep '^\s+<a href' |cut -d'>' -f2 |cut -d'<' -f1  |awk '{print "<SEEKINGALPHA>"$0}' |head -n 1
+
 \rm -f tmp*
 
