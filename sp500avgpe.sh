@@ -1,7 +1,7 @@
 #!/bin/sh
 
 >tmp$$
-curl 'http://en.wikipedia.org/wiki/List_of_S&P_500_companies' |egrep -i "?CIK=" |cut -d'='  -f5 |cut -d'&' -f1 |while read line
+wget -qO- 'http://en.wikipedia.org/wiki/List_of_S&P_500_companies' |egrep -i "?CIK=" |cut -d'='  -f5 |cut -d'&' -f1 |while read line
 do
     curl "http://finance.yahoo.com/q/ks?s=$line"  |sed 's/\<td/\n/g' |grep "Forward P/E" -A 3 |egrep -o ">[0-9]+.[0-9]+|N/A" |sed -e 's/>//g' >> tmp$$
 done
