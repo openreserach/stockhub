@@ -18,7 +18,8 @@ do
 		
 		cat tmp |egrep 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "[0-9]{2}/[0-9]{2}/[0-9]{2}" |cat -n > tmp1
 		cat tmp |egrep -o '^\s+Buy to cover\s+$|^\s+Sell short\s+$|^\s+Buy\s+$|^\s+Sell\s+$'|tr -d ' '|cat -n > tmp2
-		cat tmp |egrep -A 2 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "http://stocks.covestor.com/[a-z]+" |cut -d'/' -f4 |tr [[:lower:]] [[:upper:]] |cat -n |sed -e 's/^[ \t]*//' >tmp3
+		#cat tmp |egrep -A 2 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "http://stocks.covestor.com/[a-z]+" |cut -d'/' -f4 |tr [[:lower:]] [[:upper:]] |cat -n |sed -e 's/^[ \t]*//' >tmp3
+		cat tmp |egrep 'title="[A-Z]+"|class="symSec">[A-Z]+<' |cut -d'<' -f2 |sed -e 's/td class="symSec"//g' -e 's/title=//g' -e 's/>//g' -e 's/<//g' -e 's/"//g' -e 's/ //g' |cat -n > tmp3
 		cat tmp|egrep 'numeric">\$[0-9]+.[0-9]+'  |egrep -o '\$[0-9]+.[0-9]+' |cat -n > tmp4
 		
 		join tmp1 tmp2 |join - tmp3 |join - tmp4 |while read line
