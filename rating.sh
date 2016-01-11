@@ -29,12 +29,11 @@ do
     fi
 done
 echo "================================"
+export sp500avgpe=`curl http://www.multpl.com/ |grep "> S&amp;P 500 PE Ratio<" |egrep -o '[0-9]{2}\.[0-9]{2}'`
+echo -e "S&P 500 avg PE:" $sp500avgpe
 #gurufocus biz predicability
 export predstar=`curl "http://www.gurufocus.com/gurutrades/$1" |grep "Business Predictability" |egrep -o "[0-9].[0-9]-Star<|[0-9]-Star<"  |cut -d'-' -f1`
 echo -e "Predictability:\t" $predstar
-#MSN StockScouter
-#export MSNStockScouter=`curl "http://investing.money.msn.com/investments/stock-ratings/?symbol=$1" |egrep -A 1 'class="rat"'  |tail -n 1 |tr -d ' '`
-#echo -e "MSN Rating:\t"$MSNStockScouter
 
 #Crammer's MadMoney comments
 export madmoneyurl="http://madmoney.thestreet.com/07/index.cfm?page=lookup"
@@ -52,12 +51,6 @@ curl "http://download.finance.yahoo.com/d/quotes.csv?s=$1,SPY&f=m8" |cat -v |sed
 #stoxline rating
 export stoxline=`curl "http://www.stoxline.com/quote.php?symbol=$1" |grep margin-bottom |grep "http://www.stoxline.com/pics/[0-9]s.png" |egrep  -o '[0-9]s.png' |sed 's/s.png/ stars/g'`
 echo -e "Stoxline:\t"$stoxline
-
-#Zacks Rank
-export zacksrank=`curl "http://www.zacks.com/stock/quote/$1" |grep 'Zacks Rank : ' |cut -d'>' -f2- |cut -d'<' -f1 |cut -d':' -f2`
-export zacksindustry=`curl "http://www.zacks.com/stock/quote/$1" |egrep -A 1 '>Zacks Industry Rank <sup' |tail -n 1 |cut -d'>' -f3- |cut -d'<' -f1`
-export zacksstyle=` curl "http://www.zacks.com/stock/quote/$1" |egrep -A 4 '<span>Style Scores <sup' |tail -n 3 |sed -e 's/<span class="composite_val">//g' -e 's/<\/span>//g' |tr -d '\n'  |sed -e 's/ //g' -e 's/|/ /g'`
-echo -e "Zacks Rank:\t"$zacksrank" ; "$zacksindustry" ; "$zacksstyle
 
 #MotleyFool's rating to be replace motley api
 if [ ${FOOL_API_KEY+1} ] 
@@ -120,13 +113,6 @@ if [[ $? -eq 0 ]]; then
 	done
 fi
 
-#found=$(grep -w $1 $thelionlog)
-#if [[ $? -eq 0 ]]; then
-#	echo "TheLion Top Manager Recent Transactions==================="
-#	echo "User Stock Status Action Buydate Dummy Selldate dummy Buyprice Sellprice Gain%" |awk '{printf "%-15s %-5s %-10s %-7s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$7,$9,$10,$11}'
-#	grep -w $1 $thelionlog
-#fi
-
 
 export thismonth=`date +%m |sed 's/^0//g'`
 export lastmonth=`date -d "1 month ago" +%m |sed 's/^0//g'`
@@ -142,9 +128,9 @@ echo "Radar Screen----------------------------------------"
 curl "http://www.grahaminvestor.com/screens/graham-intrinsic-value-stocks/" |egrep -o 'bc\?s=[A-Z.]+'|cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Graham Intrinsic Value/g"
 curl "http://www.grahaminvestor.com/screens/low-price-to-operating-cash-flow-ratio/" |egrep -o 'bc\?s=[A-Z.]+'|cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Low Price to Operating CashFlow Raio/g"
 
-curl "http://seekingalpha.com/analysis/investing-ideas/long-ideas" |egrep -o "/symbol/[a-z]+" |cut -d'/' -f3 |tr [:lower:]  [:upper:] |egrep -w "$1$" | sed "s/$1/SeekingAlphaLongIdea/g"
-curl "http://seekingalpha.com/analysis/investing-ideas/short-ideas" |egrep -o "/symbol/[a-z]+" |cut -d'/' -f3 |tr [:lower:]  [:upper:] |egrep -w "$1$" |sed "s/$1/SeekingAlphaShortIdea/g"
-curl "http://seekingalpha.com/analysis/investing-ideas/top-ideas" |egrep -o "/symbol/[a-z]+" |cut -d'/' -f3 |tr [:lower:]  [:upper:]  |egrep -w "$1$" |sed "s/$1/SeekingAlphaTopIdea/g"
+curl "http://seekingalpha.com/analysis/investing-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlphaLongIdea/g"
+curl "http://seekingalpha.com/analysis/investing-ideas/short-ideas" |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" |sed "s/$1/SeekingAlphaShortIdea/g"
+curl "http://seekingalpha.com/analysis/investing-ideas/top-ideas"   |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]  |egrep -w "$1$" |sed "s/$1/SeekingAlphaTopIdea/g"
 
 curl "http://www.wenxuecity.com/bbs/archive.php?page=0&keyword=Long&SubID=finance&year=current" |egrep  -o -i "long [A-Za-z]+"  |grep -v term|grep -v target |grep -v bar |grep -v shadow |grep -v time |grep -v driveway |grep -v position |tr '[:lower:]' '[:upper:]' |sed 's/LONG //g' |sort |uniq |egrep -w "$1$" |sed "s/$1/DaQianLongIdea/g"
 
