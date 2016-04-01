@@ -53,7 +53,7 @@ export stoxline=`curl "http://www.stoxline.com/quote.php?symbol=$1" |grep margin
 echo -e "Stoxline:\t"$stoxline
 
 #MotleyFool's rating to be replace motley api
-if [ ${FOOL_API_KEY+1} ] 
+if [ ${FOOL_API_KEY} ] 
 then  #apply for your own free key at http://developer.fool.com/, and set it in environment variable FOOL_API_KEY
 export star=`curl "http://www.fool.com/a/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]"`
 echo -e "MotelyFool:\t"$star
@@ -128,9 +128,9 @@ echo "Radar Screen----------------------------------------"
 curl "http://www.grahaminvestor.com/screens/graham-intrinsic-value-stocks/" |egrep -o 'bc\?s=[A-Z.]+'|cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Graham Intrinsic Value/g"
 curl "http://www.grahaminvestor.com/screens/low-price-to-operating-cash-flow-ratio/" |egrep -o 'bc\?s=[A-Z.]+'|cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Low Price to Operating CashFlow Raio/g"
 
-curl "http://seekingalpha.com/analysis/investing-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlphaLongIdea/g"
-curl "http://seekingalpha.com/analysis/investing-ideas/short-ideas" |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" |sed "s/$1/SeekingAlphaShortIdea/g"
-curl "http://seekingalpha.com/analysis/investing-ideas/top-ideas"   |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]  |egrep -w "$1$" |sed "s/$1/SeekingAlphaTopIdea/g"
+curl "http://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlphaLongIdea/g"
+curl "http://seekingalpha.com/stock-ideas/short-ideas" |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" |sed "s/$1/SeekingAlphaShortIdea/g"
+curl "http://seekingalpha.com/stock-ideas/top-ideas"   |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]  |egrep -w "$1$" |sed "s/$1/SeekingAlphaTopIdea/g"
 
 curl "http://www.wenxuecity.com/bbs/archive.php?page=0&keyword=Long&SubID=finance&year=current" |egrep  -o -i "long [A-Za-z]+"  |grep -v term|grep -v target |grep -v bar |grep -v shadow |grep -v time |grep -v driveway |grep -v position |tr '[:lower:]' '[:upper:]' |sed 's/LONG //g' |sort |uniq |egrep -w "$1$" |sed "s/$1/DaQianLongIdea/g"
 
