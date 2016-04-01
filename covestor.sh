@@ -7,7 +7,7 @@ for page in `seq 1 20`
 do
 	[ $page -eq 1 ] && _page=? || _page='page/'$page'/?'
 	url='http://search.covestor.com/'$_page'orderby=performance&riskscoremax='$maxrisk'&riskscoremin='$minrisk
-	curl $url |egrep -o "http://covestor.com/[a-zA-Z-]+/[a-zA-Z-]+" |sort |uniq |while read line
+	curl $url |egrep -o "http://covestor.com/[a-zA-Z-]+/[a-zA-Z-]+" |sort -R |uniq |while read line
 	do
 		manager=`echo $line|cut -d'/' -f4`
 		fund=`echo $line |cut -d'/' -f5`	#fund's name manager-to-fund is 1-to-m
@@ -16,11 +16,11 @@ do
 		freq=`cat tmp |egrep -o "Average trades per month [0-9.]+" |egrep -o "[0-9.]+"`
 		perm=`cat tmp |egrep -A 2 'Past 30 days</td>'|egrep -o '\-[0-9]+.[0-9]+%|[0-9]+.[0-9]+%'`
 		
-		cat tmp |egrep 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "[0-9]{2}/[0-9]{2}/[0-9]{2}" |cat -n > tmp1
+		cat tmp |egrep 'labelCol">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "[0-9]{2}/[0-9]{2}/[0-9]{2}" |cat -n > tmp1
 		cat tmp |egrep -o '^\s+Buy to cover\s+$|^\s+Sell short\s+$|^\s+Buy\s+$|^\s+Sell\s+$'|tr -d ' '|cat -n > tmp2
 		#cat tmp |egrep -A 2 'title">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "http://stocks.covestor.com/[a-z]+" |cut -d'/' -f4 |tr [[:lower:]] [[:upper:]] |cat -n |sed -e 's/^[ \t]*//' >tmp3
 		cat tmp |egrep 'title="[A-Z]+"|class="symSec">[A-Z]+<' |cut -d'<' -f2 |sed -e 's/td class="symSec"//g' -e 's/title=//g' -e 's/>//g' -e 's/<//g' -e 's/"//g' -e 's/ //g' |cat -n > tmp3
-		cat tmp|egrep 'numeric">\$[0-9]+.[0-9]+'  |egrep -o '\$[0-9]+.[0-9]+' |cat -n > tmp4
+		cat tmp|egrep 'numeric.+">\$[0-9]+.[0-9]+'  |egrep -o '\$[0-9]+.[0-9]+' |cat -n > tmp4
 		
 		join tmp1 tmp2 |join - tmp3 |join - tmp4 |while read line
 		do
