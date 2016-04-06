@@ -1,10 +1,8 @@
 #!/bin/bash
 
-#marketwatch stock trading games with most participations
-
-for game in redditchallenge2015 summer-2015-stock-market-trading-challenge uni-investors-spring-2015
-do #marketwatch.com stock trading games/contest of interest
-echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}' > marketwatch-$game.log
+curl "http://www.marketwatch.com/game/find?sort=NumberOfPlayers&descending=True"  |egrep -o '/game/.+'  |grep title  |cut -d '"' -f1 | cut -d'/' -f3 |while read game
+do #marketwatch.com stock trading games with most players
+	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}' > marketwatch-$game.log
 	for page in 0 10 20 
 	do #Top 100 players
 		rank=$page
