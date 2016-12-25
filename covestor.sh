@@ -1,26 +1,22 @@
 #!/bin/bash
 
-export minrisk=1 #portfolio risk range from 1-5(highest)
-export maxrisk=4 
-
 curl "http://covestor.com/search/champions" |egrep -o "http://covestor.com/[a-zA-Z-]+/[a-zA-Z-]+" |sort |uniq > tmp0
-for page in `seq 1 5`
+curl "http://covestor.com/search" |egrep -o "http://covestor.com/[a-zA-Z-]+/[a-zA-Z-]+" |sort |uniq >> tmp0
+for page in `seq 2 2`
 do
-	[ $page -eq 1 ] && _page=? || _page='page/'$page'/?'
-	url='http://search.covestor.com/'$_page'orderby=performance&riskscoremax='$maxrisk'&riskscoremin='$minrisk
-	curl $url |egrep -o "http://covestor.com/[a-zA-Z-]+/[a-zA-Z-]+" |sort |uniq >> tmp0
+    	curl http://covestor.com/search/page/$page  |egrep -o "http://covestor.com/[a-zA-Z-]+/[a-zA-Z-]+" |sort |uniq >> tmp0
 done
 cat tmp0 |sort |uniq |while read line
 do
+	curl $line > tmp
 	manager=`echo $line|cut -d'/' -f4`
 	fund=`echo $line |cut -d'/' -f5`	#fund's name manager-to-fund is 1-to-m
-	curl $line > tmp
 	freq=`cat tmp |egrep -o "Average trades per month [0-9.]+" |egrep -o "[0-9.]+"`
-	perm=`cat tmp |egrep -A 2 'Past 30 days</td>'|egrep -o '\-[0-9]+.[0-9]+%|[0-9]+.[0-9]+%'`
+        perm=`cat tmp |egrep -A 1 'Last 365 Days' |egrep -o '\-[0-9]+.[0-9]+%|[0-9]+.[0-9]+%'`
 	
-	cat tmp |egrep 'labelCol">[0-9]{2}/[0-9]{2}/[0-9]{2}' |egrep -o "[0-9]{2}/[0-9]{2}/[0-9]{2}" |cat -n > tmp1
-	cat tmp |egrep -o '^\s+Buy to cover\s+$|^\s+Sell short\s+$|^\s+Buy\s+$|^\s+Sell\s+$'|tr -d ' '|cat -n > tmp2
-	cat tmp |egrep 'title="[A-Z]+"|class="symSec">[A-Z]+<' |cut -d'<' -f2 |sed -e 's/td class="symSec"//g' -e 's/title=//g' -e 's/>//g' -e 's/<//g' -e 's/"//g' -e 's/ //g' |cat -n > tmp3
+	cat tmp |egrep 'labelCol">\w+ [0-9]+, [0-9]+<' |cut -d'>' -f2 |cut -d'<' -f1 |while read date; do date -d "$date" +%m/%d/%Y; done |cat -n > tmp1
+ 	cat tmp |egrep -o -i '>Buy<|>Sell<|>\w+Cover<|>\w+Short>' |sed -e 's/<//g' -e 's/>//g' |cat -n > tmp2
+ 	cat tmp |egrep '<td> <a href="http://stocks.covestor.com/\w+">[A-Z]+<' |cut -d'>' -f3 |cut -d'<' -f1 |cat -n > tmp3
 	cat tmp|egrep 'numeric.+">\$[0-9]+.[0-9]+'  |egrep -o '\$[0-9]+.[0-9]+' |cat -n > tmp4
 		
 	join tmp1 tmp2 |join - tmp3 |join - tmp4 |while read line
