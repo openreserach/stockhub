@@ -1,32 +1,15 @@
 #!/bin/bash
-
-
+echo "Player Rating Date Ticker Price" |awk '{printf "%-20s%-10s%-10s%-15s%-10s\n",$1,$2,$3,$4,$5}' > fool.log
 export UrlHighestRatedNewPlayers="http://caps.fool.com/Ajax/GetStatsPageData.aspx?statsmajor=PlayerStats&statsminor=HRNP&ViewMode=Detailed"
-
-\rm cookie
-curl -c cookie -b cookie $UrlHighestRatedNewPlayers >tmp$$ 
-export Lines=`cat tmp$$ |wc -l`
-while [[ $Lines -lt 100 ]]; do #do until page containing data generated
-     curl -c cookie -b cookie $UrlHighestRatedNewPlayers > tmp$$	
-     export Lines=`cat tmp$$ |wc -l`
-done
-cat tmp$$ |egrep  -o '/player/\w+.aspx' |cut -d'/' -f3 |cut -d'.' -f1 > fooltopnewplayers
-
-
-export daysago=0
-if [ $1 ]; then
-    export daysago=$1
-fi 
-thedate=`date -d "$daysago day ago" +%Y-%m-%d`
-
-echo "Player Rank Stock Date Time Price" |awk '{printf "%-20s%-10s%-10s%-15s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-cat fooltopnewplayers |while read player
+curl $UrlHighestRatedNewPlayers |egrep -o "\s\s+\w+</a>"  |sed -e 's/\s//g' -e 's/<\/a>//g' |tr 'A-Z' 'a-z' |while read player
 do
-	rank=`curl "http://www.fool.com/a/caps/ws/caps/ws/Player/$player/Picks/Active?apikey=$FOOL_API_KEY" |grep PlayerRank |cut -d'>' -f2 |cut -d'<' -f1`
-	curl "http://www.fool.com/a/caps/ws/caps/ws/Player/$player/Picks/Active?apikey=$FOOL_API_KEY" |egrep -A 2 -B 5 "<StartDate>$thedate"  |egrep "TickerSymbol|StartDate|StartPrice|--" | cut -d'>' -f2 |cut -d'<' -f1 |tr '\n' ' ' |sed "s/--/\n/g" |while read  trans
-	do
-		echo $player $rank $trans |awk '{printf "%-20s%-10s%-10s%-15s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	done
+    rating=`curl http://caps.fool.com/player/$player.aspx |egrep -o 'RatingFormula_lblRating">[0-9]+.[0-9]+<' |egrep -o '[0-9]+.[0-9]+'`
+    curl http://caps.fool.com/player/$player.aspx |egrep -A 1000 'class="picksDataView"'  |egrep  "/Ticker/[A-Z]+" |cut -d'>' -f3- |cut -d'<' -f1 |cat -n > tmp1
+    curl http://caps.fool.com/player/$player.aspx  |egrep -o 'StartDate">[0-9]+/[0-9]+/[0-9]+' |sed 's/StartDate">//g'  |cat -n > tmp2
+    curl http://caps.fool.com/player/$player.aspx  |egrep  '\s+\$[0-9]+.[0-9]+' |sed 's/\s//g' |cat -n > tmp3
+    join tmp1 tmp2 |join tmp3 - | while read line
+    do
+  	echo $player $rating $line |awk '{printf "%-20s%-10s%-10s%-15s%-10s\n",$1,$2,$6,$5,$4}' >> fool.log
+    done
 done
 
-\rm tmp$$ 

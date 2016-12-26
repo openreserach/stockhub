@@ -1,6 +1,12 @@
 #!/bin/bash
 
-curl "http://www.marketwatch.com/game/find?sort=NumberOfPlayers&descending=True"  |egrep -o '/game/.+'  |grep title  |cut -d '"' -f1 | cut -d'/' -f3 |while read game
+>tmpgames
+for index in 0 10 20 30
+do
+    curl "http://www.marketwatch.com/game/find?index=$index&sort=NumberOfPlayers&descending=True"  |egrep -o '/game/.+'  |grep title  |cut -d '"' -f1 | cut -d'/' -f3 >> tmpgames
+done
+#curl "http://www.marketwatch.com/game/find?sort=NumberOfPlayers&descending=True"  |egrep -o '/game/.+'  |grep title  |cut -d '"' -f1 | cut -d'/' -f3 |while read game
+cat tmpgames |while read game
 do #marketwatch.com stock trading games with most players
 	echo "Player Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}' > marketwatch-$game.log
 	for page in 0 10 20 
