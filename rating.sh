@@ -6,12 +6,8 @@ export marketwatchlog="marketwatch-*.log"
 export foollog="fool.log"
 export marketocracy="marketocracy.log"
 
-curl "http://finance.yahoo.com/quote/$1" > tmp
-#export price=`cat tmp |egrep -o 'regularMarketPrice":{"raw":[0-9]+.[0-9]+' |tail -n 1 |cut -d':' -f3`
-export name=`cat tmp|egrep -o 'longName":"[A-Za-z0-9,._ ]+"' |head -n 1 |cut -d':' -f2 `
-echo $1:$name `date +%m/%d/%Y`
-cat tmp |sed "s/</\n/g"|egrep "257|258" |head -n 2 |cut -d'>' -f2 |tr '\n' ' '
-echo
+curl "https://www.google.com/finance?q=$1" |egrep -o "id:\"[0-9]+\",values:\[[^}]+"  |egrep $1  |cut -d'[' -f2 |sed -e 's/"//g' |cut -d',' -f1,2,3,4,6 |awk -F',' '{printf "%s,%s \n$%s %s %s%\n",$1,$2,$3,$4,$5}'
+#|cut -d'[' -f2 |sed -e 's/"//g' |cut -d',' -f1,2,3,4,6 |awk -F',' '{printf "%s,%s \n$%s %s %s%",$1,$2,$3,$4,$5}'
 
 curl "http://www.finviz.com/quote.ashx?t=$1" > tmp
 cat tmp|grep center |grep fullview-links |grep tab-link |cut -d'>' -f4,6,8 |sed 's/<\/a/ /g'
@@ -95,14 +91,14 @@ curl "http://finance.yahoo.com/q?s=$1" |grep 'yfi_quote_headline' |sed 's/;">/\n
 curl "http://seekingalpha.com/symbol/$1" |egrep -o 'qp_latest">.+<' |cut -d'<' -f1 |cut -d '>' -f2 |head -n 2
 
 echo "Radar Screen----------------------------------------"
-curl "http://x-fin.com/stocks/screener/graham-dodd/" |grep -A 1 "The complete list of" |egrep -o $1 |sed "s/$1/Graham-Dodd-Value/g"
-curl "http://x-fin.com/stocks/screener/graham-formula/" |egrep -A 1 "The complete list of" |egrep -o $1 |sed "s/$1/Graham-Formula-Value/g"
+curl "http://x-fin.com/stocks/screener/graham-dodd/"    |egrep -A 1 "The complete list of" |egrep -o -w $1 |sed "s/$1/Graham-Dodd-Value/g"
+curl "http://x-fin.com/stocks/screener/graham-formula/" |egrep -A 1 "The complete list of" |egrep -o -w $1 |sed "s/$1/Graham-Formula-Value/g"
 
 curl "http://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlphaLongIdea/g"
 curl "http://seekingalpha.com/stock-ideas/short-ideas" |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" |sed "s/$1/SeekingAlphaShortIdea/g"
 curl "http://seekingalpha.com/stock-ideas/top-ideas"   |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]  |egrep -w "$1$" |sed "s/$1/SeekingAlphaTopIdea/g"
 
-grep -w $1 $marketocracy  |sed "s/$1/MarketoCracy Master Top Holding/g"
+egrep -w "^$1," $marketocracy  |sed "s/$1/MarketoCracy Master Top Holding/g"
 
 curl "http://www.insidercow.com/notLogin/buyByCompany.jsp?ORDER=asc&SORTBY=company_name&days=6" |egrep -o "company=[A-Z]+"|sort |uniq |cut -d'=' -f2 |egrep -w "$1$" |sed "s/$1/Insider Buy/g"
 
