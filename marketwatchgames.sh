@@ -1,9 +1,10 @@
 #!/bin/bash
 
+\rm -f marketwatch*.log
 >tmpgames
 for index in 0 10 20 30
 do
-    curl "http://www.marketwatch.com/game/find?index=$index&sort=NumberOfPlayers&descending=True"  |egrep -o '/game/.+'  |grep title  |cut -d '"' -f1 | cut -d'/' -f3 >> tmpgames
+    curl "http://www.marketwatch.com/game/find?index=$index&access=PUBLIC&sort=NumberOfPlayers&descending=True"  |egrep -o '/game/.+'  |grep title  |cut -d '"' -f1 | cut -d'/' -f3 >> tmpgames
 done
 #curl "http://www.marketwatch.com/game/find?sort=NumberOfPlayers&descending=True"  |egrep -o '/game/.+'  |grep title  |cut -d '"' -f1 | cut -d'/' -f3 |while read game
 cat tmpgames |while read game
