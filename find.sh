@@ -16,6 +16,7 @@ cat covestor.log 	| egrep "$YYYYdate" 	|awk '{print $1}' > tmpcommon
 cat marketwatch*.log  	| egrep "$YYdate" 	|awk '{print $1","$3}' |sort |uniq| cut -d',' -f2 >> tmpcommon 
 cat fool.log 		| egrep "$YYdate" 	|awk '{print $4}' >> tmpcommon
 cat thelion.log 	| egrep "$YYYYdate" 	|awk '{print $2}' >> tmpcommon
+./seekingalphalong.sh   | sort |uniq 				  >> tmpcommon
 
 cat tmpcommon |sort |uniq -d |while read stock
 do
