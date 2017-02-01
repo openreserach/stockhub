@@ -6,8 +6,7 @@ export marketwatchlog="marketwatch-*.log"
 export foollog="fool.log"
 export marketocracy="marketocracy.log"
 
-curl "https://www.google.com/finance?q=$1" |egrep -o "id:\"[0-9]+\",values:\[[^}]+"  |egrep $1  |cut -d'[' -f2 |sed -e 's/"//g' |cut -d',' -f1,2,3,4,6 |awk -F',' '{printf "%s,%s \n$%s %s %s%\n",$1,$2,$3,$4,$5}'
-#|cut -d'[' -f2 |sed -e 's/"//g' |cut -d',' -f1,2,3,4,6 |awk -F',' '{printf "%s,%s \n$%s %s %s%",$1,$2,$3,$4,$5}'
+curl "https://www.google.com/finance?q=$1" |egrep -o "id:\"[0-9]+\",values:\[[^}]+"  |egrep -w $1 |cut -d'[' -f2 |sed -e 's/","/|/g'  -e 's/"//g' |cut -d'|' -f1,2,3,4,6  |awk -F'|' '{printf "%s,%s \n$%s %s %s%\n",$1,$2,$3,$4,$5}'
 
 curl "http://www.finviz.com/quote.ashx?t=$1" > tmp
 cat tmp|grep center |grep fullview-links |grep tab-link |cut -d'>' -f4,6,8 |sed 's/<\/a/ /g'
@@ -65,13 +64,6 @@ upper=`echo $1|tr a-z A-Z`
 curl "http://www.stockpickr.com/symbol/$upper" |egrep "ratings" |grep "summary" |cut -d'>' -f4 |cut -d'<' -f1 |while read line
 do
     echo -e "Stockpickr:\t"$line
-done
-
-#GStock
-export lower=`echo $1|tr A-Z a-z`
-curl http://www.gstock.com/quote/$lower.html |egrep -o "BUY|SELL"  |head -n 1 |while read line
-do
-    echo -e "GStock ALert:\t" $line
 done
 
 #guru focus fair value
