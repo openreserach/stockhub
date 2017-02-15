@@ -99,11 +99,14 @@ found=$(grep -w $1 $covestorlog)
 if [[ $? -eq 0 ]]; then
 	echo "===Covestor Top Manager Recent Transactions=================="
 	echo "Stock Action Price Date Trade/Mon Return Manager Portfolio" |awk  '{printf "%-10s %-10s %-10s %-10s %-10s %-10s %-30s %-20s\n", $1,$2,$3,$4,$5,$6,$7,$8}'
-	grep -w $1 $covestorlog
+	grep -w $1 $covestorlog |grep -i Buy
+	grep -w $1 $covestorlog |grep -i Sell
+	grep -w $1 $covestorlog |grep -i Short 
 fi 
 found=$(grep -w $1 $foollog)
 if [[ $? -eq 0 ]]; then
 	echo "===FoolPlayer Rating Date Ticker Price==================="
+        echo "Player Rating Date Ticker Price" |awk '{printf "%-20s%-10s%-10s%-15s%-10s\n",$1,$2,$3,$4,$5}'
  	grep -w $1 $foollog
 fi
 found=$(cat $thelionlog |grep "Active" |grep -w $1)
@@ -114,10 +117,18 @@ fi
 export thismonth=`date +%m |sed 's/^0//g'`
 export lastmonth=`date -d "1 month ago" +%m |sed 's/^0//g'`
 export activitymonth="(0)?$thismonth/[0-9]+/(20)?`date +%y`|(0)?$lastmonth/[0-9]+/(20)?`date +%y`"
-found=$(grep -w $1 $marketwatchlog |egrep $activitymonth)
+
+export onedayago=`date -d "1 day ago" +%m/%d/%y |tr '\n' '|' |sed -e 's/|$//' -e 's/0//g'`
+export twodayago=`date -d "2 day ago" +%m/%d/%y |tr '\n' '|' |sed -e 's/|$//' -e 's/0//g'`
+export threedayago=`date -d "3 day ago" +%m/%d/%y |tr '\n' '|' |sed -e 's/|$//' -e 's/0//g'`
+export alldays="$onedayago|$twodayago|$threedayago"
+
+found=$(grep -w $1 $marketwatchlog |egrep $alldays)
 if [[ $? -eq 0 ]]; then
 	echo "===MarketWatchPlayer Rank Stock Date Action Shares Price" |awk '{printf"%-30s %-5s %-10s %-10s %-10s %-10s %-10s\n",$1,$2,$3,$4,$5,$6,$7}'
-	grep -w $1 $marketwatchlog |egrep "$activitymonth" |cut -d':' -f2-
+	grep -w $1 $marketwatchlog |egrep $alldays |grep -i Buy  |cut -d':' -f2-
+	grep -w $1 $marketwatchlog |egrep $alldays |grep -i Sell |cut -d':' -f2-
+	grep -w $1 $marketwatchlog |egrep $alldays |grep -i short|cut -d':' -f2-
 fi
 
 
