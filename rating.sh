@@ -33,11 +33,11 @@ echo -e "Predictability:\t" $predstar
 #Crammer's MadMoney comments
 export madmoneyurl="http://madmoney.thestreet.com/07/index.cfm?page=lookup"
 export madmoneylookup="symbol=$1"
-curl -d $madmoneylookup $madmoneyurl |egrep -m 1  ">[0-9]{2}/[0-9]{2}/200?" -A 20 >tmp1$$ #care the latest one
-export maddate=`cat tmp1$$ |egrep -o "[0-9]{2}/[0-9]{2}/20[0-9][0-9]"`
-export madbuysell=`cat tmp1$$ |egrep -o "[1-5]\.gif"|sed 's/.gif//g' |sed 's/5/SB/g'|sed 's/4/B/g'|sed 's/3/H/g'|sed 's/2/S/g'| sed 's/1/SS/g'`
-export madvalue=`cat tmp1$$ |egrep -o "[0-9]+\.[0-9]+"|head -n 1`
-export madchange=`cat tmp1$$ |egrep -o "\+ [0-9]+\.[0-9]+%|\- [0-9]+\.[0-9]+%"|tail -n 1`
+curl -d $madmoneylookup $madmoneyurl |egrep -m 1  ">[0-9]{2}/[0-9]{2}/200?" -A 20 >tmp #care the latest one
+export maddate=`cat tmp |egrep -o "[0-9]{2}/[0-9]{2}/20[0-9][0-9]"`
+export madbuysell=`cat tmp |egrep -o "[1-5]\.gif"|sed 's/.gif//g' |sed 's/5/SB/g'|sed 's/4/B/g'|sed 's/3/H/g'|sed 's/2/S/g'| sed 's/1/SS/g'`
+export madvalue=`cat tmp |egrep -o "[0-9]+\.[0-9]+"|head -n 1`
+export madchange=`cat tmp |egrep -o "\+ [0-9]+\.[0-9]+%|\- [0-9]+\.[0-9]+%"|tail -n 1`
 echo -e "Crammer:\t"$maddate $madbuysell $madvalue $madchange
 
 #w.r.t S&P 50MA
@@ -56,8 +56,8 @@ fi
 
 
 #Trend Spotter
-#trenspotter=`curl "http://www.stockta.com/cgi-bin/opinion.pl?symb=$1&num1=4&mode=stock"|sed 's/TR/\n/g' |grep "Trend Spotter"  |egrep -o ">Buy<|>Sell<|>Hold<" |sed -e 's/>//g' -e 's/<//g'`
-#echo -e "Trend Spotter:\t"$trenspotter
+export trenspotter=`curl "http://www.stockta.com/cgi-bin/analysis.pl?symb=$1&cobrand=&mode=stock" |grep -i 'class="analysisTd' |grep -v Intermediate |egrep -o ">[A-Za-z]+ \([-0-9.]+\)" |tr '>' '|' |tr -d '\n'`
+echo -e "Trend(S|I|L):\t"$trenspotter
 
 #Stock Picker rating
 upper=`echo $1|tr a-z A-Z`
@@ -132,5 +132,4 @@ if [[ $? -eq 0 ]]; then
 fi
 
 
-\rm -f tmp*
 
