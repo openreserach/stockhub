@@ -7,7 +7,7 @@ $mycurl "https://www.finviz.com/quote.ashx?t=$1" > tmp
 cat tmp|grep "<title>" |cut -d'>' -f2 |cut -d'<' -f1 |sed 's/Stock Quote//g'
 cat tmp|grep center |grep fullview-links |grep tab-link |cut -d'>' -f4,6,8 |sed 's/<\/a/ /g'
 cat tmp|grep "Current stock price" |cut -d'>' -f5- |cut -d'<' -f1
-$mycurl "https://finance.yahoo.com/quote/$1"  |egrep -o  'data[Red|Green]+\)" data-reactid="[0-9]+">\S+\s+\([+|-][0-9.%]+\)' |cut -d'(' -f2 |cut -d')' -f1
+$mycurl "https://finance.yahoo.com/quote/$1"  |egrep -o  'data[Red|Green]+\)" data-reactid="[0-9]+">\S+\s+\([+|-][0-9.%]+\)' |cut -d'(' -f2 |cut -d')' -f1 |head -n 1
 echo "FA color-coded=============================="
 for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'EPS next 5Y' 'Dividend %'
 do
@@ -27,7 +27,7 @@ export sp500avgpe=`$mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE
 echo -e "S&P 500 avg PE:" $sp500avgpe
 #gurufocus biz predicability
 export predstar=`$mycurl "https://www.gurufocus.com/gurutrades/$1" |egrep -o "aria-valuenow=\"[0-9]" |cut -d'"' -f2`
-echo -e "Predictability:\t" $predstar
+echo -e "Predictability:\t"$predstar
 
 #Crammer's MadMoney comments
 export madmoneyurl="https://madmoney.thestreet.com/07/index.cfm?page=lookup"
@@ -51,9 +51,13 @@ echo -e "Stoxline:\t"$stoxline
 #Argus Research from Yahoo
 $mychrome "https://finance.yahoo.com/quote/$1" > tmp 2>&1
 recommendation=`cat tmp |egrep -o 'data-reactid="11">[A-Za-z ]+<\/span>'  |grep -v -i help |cut -d'>' -f2 |cut -d'<' -f1`
-fairvalue=`cat tmp |egrep -o 'data-reactid="29">[A-Za-z ]+<' |cut -d'>' -f2 |cut -d'<' -f1 `
+fairvalue=`cat tmp |egrep -o 'Fz\(12px\) Fw\(b\)" data\-reactid="[0-9]+">[A-Za-z ]+' |cut -d'>' -f2`
 echo -e "Argus Research:\t"$recommendation
 echo -e "Fair Value:\t"$fairvalue
+
+#tipranks
+tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]' |tr -d '\n' |sed -e 's/ //g' -e 's/{//g' -e 's/"//g' -e 's/}//g' )
+echo -e "TipRank:\t"$tiprank
 
 #MotleyFool's rating to be replace motley api
 if [ ${FOOL_API_KEY} ] 
@@ -84,10 +88,15 @@ if [ ${pretiming} ]
 then
 	echo -e "PreTiming TA:\t"$pretiming
 fi
+oversold=`$mycurl "https://www.tradingview.com/markets/stocks-usa/market-movers-oversold" |egrep -o 'data-symbol="NASDAQ:[A-Z]+|data-symbol="NYSE:[A-Z]+' |cut -d':' -f2 |egrep -w $1`
+if [ $oversold ]
+then
+	echo -e "TradingView:\tOversold"
+fi
 
 echo "Radar Screen================================="
-echo -n "Fool Players: "
-$mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -m1 -A 18 "http://caps.fool.com/player" |egrep -v "<" |tr -d '\040\011' |awk 'NF' |tr '\n' ',';echo
+foolplayer=$($mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -m1 -A 18 "http://caps.fool.com/player" |egrep -v "<" |tr -d '\040\011' |awk 'NF' |tr '\n' ',')
+echo -e "Fool Players:\t"$foolplayer
 
 #Trading view
 $mycurl https://www.tradingview.com/symbols/NYSE-$1 > tmp
@@ -96,5 +105,5 @@ trader=$(cat tmp |egrep 'tv-card-user-info__name">' |head -n 1 |rev |cut -d'>' -
 idea=$(cat tmp |egrep '"tv-idea-label__icon' |head -n 1 |rev |cut -d'>' -f1-3 |rev |cut -d'<' -f1)
 timeframe=$(cat tmp |egrep '__timeframe"' |head -n 1 |cut -d',' -f2 |cut -d'<' -f1 |sed 's/ //g')
 date=$(date -d @`cat tmp |egrep "data-timestamp=" |head -n 1 |rev  |cut -d'=' -f1 |rev |cut -d'>' -f1 |sed 's/"//g'`  +"%m/%d/%Y")
-echo "Trader view:"$trader,$idea,$timeframe,$date
+echo -e "Trader view:\t"$trader,$idea,$timeframe,$date
 
