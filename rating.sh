@@ -56,7 +56,8 @@ echo -e "Argus Research:\t"$recommendation
 echo -e "Fair Value:\t"$fairvalue
 
 #tipranks
-tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]' |tr -d '\n' |sed -e 's/ //g' -e 's/{//g' -e 's/"//g' -e 's/}//g' )
+tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]' |egrep -v '{|}' |cut -d':' -f2- |tr -d '\n' |sed -e 's/ "//g' -e 's/"//g' \
+          |awk -F',' '{printf "%s all:%2d buy:%2d sell:%2d neutral:%2d",$4,$3,$1,$2,$5}' )
 echo -e "TipRank:\t"$tiprank
 
 #MotleyFool's rating to be replace motley api
@@ -106,4 +107,13 @@ idea=$(cat tmp |egrep '"tv-idea-label__icon' |head -n 1 |rev |cut -d'>' -f1-3 |r
 timeframe=$(cat tmp |egrep '__timeframe"' |head -n 1 |cut -d',' -f2 |cut -d'<' -f1 |sed 's/ //g')
 date=$(date -d @`cat tmp |egrep "data-timestamp=" |head -n 1 |rev  |cut -d'=' -f1 |rev |cut -d'>' -f1 |sed 's/"//g'`  +"%m/%d/%Y")
 echo -e "Trader view:\t"$trader,$idea,$timeframe,$date
+
+#stocktwits.com
+$mycurl -X GET https://api.stocktwits.com/api/2/streams/symbol/$1.json > tmp 
+echo "Stockwits Bull Time--Investor-----------------#Ideas--#Followers--#Likes"
+cat tmp |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
+|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-22s %8d %10d %8d\n",$1,$2,$3,$4,$5}'
+echo "Stockwits Bear Time--Investor-----------------#Ideas--#Followers--#Likes"
+cat tmp |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
+|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-22s %8d %10d %8d\n",$1,$2,$3,$4,$5}'
 
