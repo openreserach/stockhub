@@ -94,20 +94,26 @@ echo "Radar Screen================================="
 #Trading view
 $mycurl https://www.tradingview.com/symbols/NYSE-$1 > tmp
 $mycurl https://www.tradingview.com/symbols/NASDAQ-$1 >> tmp #either NYSE or NASDAQ, add up
-trader=$(cat tmp |egrep 'tv-card-user-info__name">' |head -n 1 |rev |cut -d'>' -f2 |rev |cut -d'<' -f1)
-idea=$(cat tmp |egrep '"tv-idea-label__icon' |head -n 1 |rev |cut -d'>' -f1-3 |rev |cut -d'<' -f1)
-timeframe=$(cat tmp |egrep '__timeframe"' |head -n 1 |cut -d',' -f2 |cut -d'<' -f1 |sed 's/ //g')
-date=$(date -d @`cat tmp |egrep "data-timestamp=" |head -n 1 |rev  |cut -d'=' -f1 |rev |cut -d'>' -f1 |sed 's/"//g'`  +"%m/%d/%Y")
-echo -e "Trader view:\t"$trader,$idea,$timeframe,$date
+echo "Tradingview User Buy/Sell Timestamp Timeframe Reputation #Ideas #Likes #Followers" | awk '{printf "%-25s%-10s%-10s%-12s%-12s%-8s%-8s%-8s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
+cat tmp |egrep -A 40 -B 1 'tv-widget-idea__label tv-idea-label--[a-z]+' |egrep -o 'tv-idea-label--[a-z]+|href=\"/u/[A-Za-z0-9]+/|idea__timeframe">.+<|data-timestamp="[0-9.]+"' |sed -e 's/idea__timeframe">, \+//g' -e 's/tv-idea-label--//g' -e 's/href="\/u\//,/g' -e 's/data-timestamp="//g' |tr -d '\n'| sed  -e 's/</,/g'  -e 's/"/\n/g' -e 's/\//,/g' |while read post
+do
+    timeframe=$(echo $post|cut -d',' -f1)
+    longshort=$(echo $post|cut -d',' -f2)
+    user=$(echo $post|cut -d',' -f3)
+    user=$(echo $post|cut -d',' -f3)
+    timestamp=$(date -d @`echo $post|cut -d',' -f4` +%Y%m%d)
+    profile=$($mycurl https://www.tradingview.com/u/$user/ |egrep -B 1 'icon--reputation|icon--charts|icon--likes|icon--followers' |egrep "item-value" |cut -d'>' -f2 |cut -d '<' -f1 |tr '\n' ',') 
+    echo $user,$longshort,$timestamp,$timeframe,$profile |awk -F',' '{printf "%-25s%-10s%-10s%-12s%-12s%-8s%-8s%-8s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
+done
 
 #stocktwits.com
 $mycurl -X GET https://api.stocktwits.com/api/2/streams/symbol/$1.json > tmp 
-echo "Stockwits Bull Time--Investor-----------------#Ideas--#Followers--#Likes"
+echo "Stockwits Bull Time--Investor--------------------#Ideas--#Followers--#Likes"
 cat tmp |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
-|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-22s %8d %10d %8d\n",$1,$2,$3,$4,$5}'
-echo "Stockwits Bear Time--Investor-----------------#Ideas--#Followers--#Likes"
+|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}'
+echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"
 cat tmp |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
-|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-22s %8d %10d %8d\n",$1,$2,$3,$4,$5}'
+|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}'
 
 #fool recent picks 
 echo "Fool Pick Date--Player--------------Rating"
