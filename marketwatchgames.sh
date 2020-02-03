@@ -1,5 +1,6 @@
 #!/bin/bash
 
+>marketwatchgames.csv
 for game in official-reddit-challenge-2019 practice-stocks-for-fun trades-for-life eths20192020
 do
     for page in 0 10 20 30 40 50 
@@ -11,7 +12,7 @@ do
 	    rank=$(cat tmp|egrep 'rank__number ">'  |cut -d'>' -f2 |cut -d'<' -f1)
 	    cat tmp  |egrep -A 9 '</mini-quote>' |egrep -o '[A-Z0-9]+<\/mini-quote>|class="primary">[0-9]+%|class="text">[A-Za-z]+' |cut -d'<' -f1 |cut -d'>' -f2 |tr  '\n' ',' |sed -e 's/Buy/Buy\n/g' -e 's/Short/Short\n/g' |sed 's/^,//g' |while read holding
 		do
-		    echo $holding,$rank,$portfolio
+		    echo $holding,$rank,$portfolio >> marketwatchgames.csv
 		done
 	done
     done
