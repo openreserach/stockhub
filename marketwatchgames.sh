@@ -1,11 +1,11 @@
 #!/bin/bash
 
 >marketwatchgames.csv
-for game in official-reddit-challenge-2019 practice-stocks-for-fun trades-for-life eths20192020
+for game in lifetime-stock-market-game invest-until-you-die invest-until-you-die-two-2 official-reddit-challenge-2020 trades-for-life eths20192020
 do
     for page in 0 10 20 30 40 50 
     do
-	curl -stderr -L "https://www.marketwatch.com/game/$game/rankings?partial=true&index=$page" |egrep -o "/game/$game/Portfolio\?p=[0-9]+.+ class" |cut -d'"' -f1 |while read portfolio
+	curl -stderr -L "https://www.marketwatch.com/game/$game/rankings?partial=true&index=$page" |egrep -o "/game/$game/portfolio\?p=[0-9]+.+ class" |cut -d'"' -f1 |while read portfolio
 	do
  	    name=$(echo $portfolio |egrep -o 'name=\S+' |cut -d'=' -f2 |sed 's/%20/ /g')
 	    curl -stderr "https://www.marketwatch.com/"$portfolio > tmp
