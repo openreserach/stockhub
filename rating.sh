@@ -25,7 +25,7 @@ done
 
 echo "Rating================================"
 export sp500avgpe=`$mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev`
-echo -e "SP500 avg-PE:" $sp500avgpe
+echo -e "S&P500 PE:\t"$sp500avgpe
 #gurufocus biz predicability
 export predstar=`$mycurl "https://www.gurufocus.com/gurutrades/$1" |egrep -o "aria-valuenow=\"[0-9]" |cut -d'"' -f2`
 [[ ! -z $predstar ]] && echo -e "Predictability:\t"$predstar
@@ -54,8 +54,7 @@ fairvalue=`cat tmp |egrep -o 'Fz\(12px\) Fw\(b\)" data\-reactid="[0-9]+">[A-Za-z
 [[ ! -z $fairvalue      ]] && echo -e "Fair Value:\t"$fairvalue
 
 #tipranks
-tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]' |egrep -v '{|}' |cut -d':' -f2- |tr -d '\n' |sed -e 's/ "//g' -e 's/"//g' \
-          |awk -F',' '{printf "%s buy:%-3d sell:%-3d neutral:%-3d",$2,$5,$4,$1}' )
+tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |awk '{print $2}' |tr -d '\n' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
 echo -e "TipRank:\t"$tiprank
 
 #MotleyFool's rating to be replace motley api
