@@ -54,7 +54,7 @@ fairvalue=`cat tmp |egrep -o 'Fz\(12px\) Fw\(b\)" data\-reactid="[0-9]+">[A-Za-z
 [[ ! -z $fairvalue      ]] && echo -e "Fair Value:\t"$fairvalue
 
 #tipranks
-tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |awk '{print $2}' |tr -d '\n' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
+tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |sort |awk '{print $2}' |tr -d '\n' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
 echo -e "TipRank:\t"$tiprank
 
 #MotleyFool's rating to be replace motley api
