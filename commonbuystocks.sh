@@ -10,4 +10,4 @@ cat $FOOLPICKS |grep ',5,' |cut -d',' -f1 |sort  >> tmp
 
 cat seekingalphalong.csv |sort >> tmp
 
-cat tmp |sort |uniq -c |sort -r |head -n 20
+cat tmp |sort |uniq -c |sort -r -n |head -n 20
