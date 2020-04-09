@@ -26,6 +26,8 @@ done
 echo "Rating================================"
 export sp500avgpe=`$mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev`
 echo -e "S&P500 PE:\t"$sp500avgpe
+export feargreed=`$mycurl https://money.cnn.com/data/fear-and-greed/ |egrep -o "Fear.+Greed Now: [0-9]+ \(\w+)" |cut -d':' -f2`
+echo -e "Fear-Greed:\t"$feargreed
 #gurufocus biz predicability
 export predstar=`$mycurl "https://www.gurufocus.com/gurutrades/$1" |egrep -o "aria-valuenow=\"[0-9]" |cut -d'"' -f2`
 [[ ! -z $predstar ]] && echo -e "Predictability:\t"$predstar
@@ -61,7 +63,7 @@ echo -e "TipRank:\t"$tiprank
 if [ ${FOOL_API_KEY} ] 
 then  #apply for your own free key at http://developer.fool.com/, and set it in environment variable FOOL_API_KEY
 	export star=`$mycurl "http://www.fool.com/a/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]"`
-	echo -e "MotelyFool[0-5]\t"$star
+	echo -e "MotelyFool:\t"$star" out of 5"
 fi
 $mycurl "http://x-fin.com/stocks/screener/graham-dodd/"    |egrep -A 1 "The complete list of" |egrep -o -w $1 |sed "s/$1/Graham-Dodd-Value/g"
 $mycurl "http://x-fin.com/stocks/screener/graham-formula/" |egrep -A 1 "The complete list of" |egrep -o -w $1 |sed "s/$1/Graham-Formula-Value/g"
@@ -92,7 +94,8 @@ oversold=`$mycurl "https://www.tradingview.com/markets/stocks-usa/market-movers-
 echo "Radar Screen================================="
 #Trading view
 $mycurl https://www.tradingview.com/symbols/NYSE-$1 > tmp
-$mycurl https://www.tradingview.com/symbols/NASDAQ-$1 >> tmp #either NYSE or NASDAQ, add up
+$mycurl https://www.tradingview.com/symbols/NASDAQ-$1 >> tmp 
+$mycurl https://www.tradingview.com/symbols/AMEX-$1 >> tmp #NYSE, NASDAQ, AMEX add up
 echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" | awk '{printf "%-25s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
 cat tmp |egrep -A 40 -B 1 'tv-widget-idea__label tv-idea-label--[a-z]+' |egrep -o 'tv-idea-label--[a-z]+|href=\"/u/[A-Za-z0-9\_\.\-]+/|idea__timeframe">.+<|data-timestamp="[0-9.]+"' |sed -e 's/idea__timeframe">, \+//g' -e 's/tv-idea-label--//g' -e 's/href="\/u\//,/g' -e 's/data-timestamp="//g' |tr -d '\n'| sed  -e 's/</,/g'  -e 's/"/\n/g' -e 's/\//,/g' |while read post
 do
