@@ -1,14 +1,15 @@
 #!/bin/bash
 
-mycurl="curl -stderr --max-time 3 -L -k -A 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.1) Gecko/20061204 Firefox/2.0.0.1'"
+mycurl="curl -stderr --max-time 3 -L -k --http2 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
 mychrome="google-chrome-stable --headless --disable-gpu --dump-dom" #headless browser to deal with more javascript
 
 $mycurl "https://www.finviz.com/quote.ashx?t=$1" > tmp
 cat tmp|grep "<title>" |cut -d'>' -f2 |cut -d'<' -f1 |sed 's/Stock Quote//g'
 cat tmp|grep center |grep fullview-links |grep tab-link |cut -d'>' -f4,6,8 |sed 's/<\/a/ /g'
+
 price=$(cat tmp|grep "Current stock price" |cut -d'>' -f5- |cut -d'<' -f1)
-updown=$($mycurl "https://finance.yahoo.com/quote/$1"  |egrep -o  'data[Red|Green]+\)" data-reactid="[0-9]+">\S+\s+\([+|-][0-9.%]+\)' |cut -d'(' -f2 |cut -d')' -f1 |head -n 1)
-echo "$"$price $updown
+updown=$(cat tmp |egrep 'Change</td>' |egrep -o "color.+"|cut -d'>' -f2 |cut -d'<' -f1)
+echo "$"$price $updown `date +%x`
 echo "FA color-coded=============================="
 for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'EPS next 5Y' 'Dividend %'
 do
@@ -22,6 +23,9 @@ do
 		echo -e "$key:\t\t$val"
     fi
 done
+echo "News=================================="
+cat tmp |egrep "white-space:nowrap" |head -n 3 |egrep -o 'white-space:nowrap">\S+.+tab-link-news">.+</a>' |cut -d'>' -f2,5  |cut -c1-10,35- |cut -d'<' -f1
+$mycurl "https://seekingalpha.com/symbol/"$1 |egrep -o 'class="symbol_latest_articles".+' |egrep -o '/news/.+' |egrep -o 'latest">.+' |cut -d'<' -f1 |cut -d'>' -f2
 
 echo "Rating================================"
 export sp500avgpe=`$mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev`
@@ -42,7 +46,7 @@ export madvalue=`cat tmp |egrep -o "[0-9]+\.[0-9]+"|head -n 1`
 export madchange=`cat tmp |egrep -o "\+ [0-9]+\.[0-9]+%|\- [0-9]+\.[0-9]+%"|tail -n 1`
 echo -e "Crammer:\t"$maddate $madbuysell $madvalue $madchange
 
-export zack=`$mycurl "https://www.zacks.com/stock/quote/BAC" |egrep -m1 "rank_chip" |cut -d'<' -f1 |sed 's/ //g'`
+export zack=`$mycurl "https://www.zacks.com/stock/quote/$1" |egrep -m1 "rank_chip" |cut -d'<' -f1 |sed 's/ //g'`
 [[ ! -z $zack ]] && echo -e "Zack Rank:\t"$zack
 #stoxline rating
 export stoxline=`$mycurl "http://m.stoxline.com/stock.php?symbol=$1" |grep -A 2 "Overall" |egrep "pics/[0-9]s.png" |egrep  -o '[0-9]s.png' |sed 's/s.png/ stars/g'`
@@ -56,7 +60,7 @@ fairvalue=`cat tmp |egrep -o 'Fz\(12px\) Fw\(b\)" data\-reactid="[0-9]+">[A-Za-z
 [[ ! -z $fairvalue      ]] && echo -e "Fair Value:\t"$fairvalue
 
 #tipranks
-tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |sort |awk '{print $2}' |tr -d '\n' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
+tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |sort |awk '{print $2}'|sed 's/,//g' |tr '\n' ',' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
 echo -e "TipRank:\t"$tiprank
 
 #MotleyFool's rating to be replace motley api
@@ -65,14 +69,14 @@ then  #apply for your own free key at http://developer.fool.com/, and set it in 
 	export star=`$mycurl "http://www.fool.com/a/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]"`
 	echo -e "MotelyFool:\t"$star" out of 5"
 fi
-$mycurl "http://x-fin.com/stocks/screener/graham-dodd/"    |egrep -A 1 "The complete list of" |egrep -o -w $1 |sed "s/$1/Graham-Dodd-Value/g"
-$mycurl "http://x-fin.com/stocks/screener/graham-formula/" |egrep -A 1 "The complete list of" |egrep -o -w $1 |sed "s/$1/Graham-Formula-Value/g"
+$mycurl "https://x-uni.com/api/screener-gd.php?param=1;5;10;3;20;10" |sed 's/,"/\n/g' |egrep -o -w $1 |sed "s/$1/Graham-Dodd-Value/g"
+$mycurl "https://x-uni.com/api/screener-gf.php?params=2;;4.6"        |sed 's/,"/\n/g' |egrep -o -w $1 |sed "s/$1/Graham-Formula-Value/g"
 $mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
 
 echo "TA & Trend ==================================="
-$mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb=$1&cobrand=&mode=stock" > tmp
-export trendspotter=$(cat tmp |grep -i 'class="analysisTd' |grep -v Intermediate |egrep -o ">[A-Za-z]+ \([-0-9.]+\)" |tr '>' '|' |head -n 1 |cut -d'|' -f2)
-export candlestick=$(cat tmp |egrep -A 2 CandleStick |egrep -o 'Recent CandleStick Analysis.+>[A-Za-z ]+|>Candle<.+borderTd">[A-Za-z ]+' |rev |cut -d'>' -f1 |rev |tr '\n' ' ')
+$mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb="$1"&cobrand=&mode=stock" > tmp
+trendspotter=`cat tmp |grep -i 'class="analysisTd' |grep -v Intermediate |egrep -o ">[A-Za-z]+ \([-0-9.]+\)" |tr '>' '|' |head -n 1 |cut -d'|' -f2`
+candlestick=`cat tmp |egrep -A 2 CandleStick |egrep -o 'Recent CandleStick Analysis.+>[A-Za-z ]+|>Candle<.+borderTd">[A-Za-z ]+' |rev |cut -d'>' -f1 |rev |tr '\n' ' '`
 [[ ! -z $trendspotter ]] && echo -e "Overall Trend:\t"$trendspotter
 [[ ! -z $candlestick ]] && echo -e "Candle Stick:\t"$candlestick
 
@@ -80,8 +84,8 @@ export barchart=$($mycurl "https://www.barchart.com/stocks/quotes/$1/"  |egrep -
 [[ ! -z $barchart ]] && echo -e "Barchart:\t"$barchart
 
 #TA pattern
-export signal=`$mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker=$1" |grep "MainContent_LastSignal"|egrep -o ">[A-Z ]+</font>" |cut -d'<' -f1|cut -d'>' -f2`
-export pattern=`$mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker=$1" |egrep "MainContent_LastPattern" |cut -d'>' -f3 |cut -d'<' -f1  |sed 's/NO PATTERN//g' |tr -d '\r\n'`
+export signal= $($mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker="$1 |egrep "MainContent_LastSignal"  |egrep -o ">[A-Z ]+</font>" |cut -d'<' -f1|cut -d'>' -f2)
+export pattern=$($mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker="$1 |egrep "MainContent_LastPattern" |cut -d'>' -f3 |cut -d'<' -f1  |sed 's/NO PATTERN//g' |tr -d '\r\n')
 [[ ! -z $single  ]] && echo -e "USBull Signal\t"$signal
 [[ ! -z $pattern ]] && echo -e "USBull Pattern\t"$pattern
 
