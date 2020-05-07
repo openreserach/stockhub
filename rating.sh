@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mycurl="curl -stderr --max-time 3 -L -k --http2 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
+mycurl="curl -s --max-time 3 -L -k --http2 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
 mychrome="google-chrome-stable --headless --disable-gpu --dump-dom" #headless browser to deal with more javascript
 
 $mycurl "https://www.finviz.com/quote.ashx?t=$1" > tmp
@@ -30,7 +30,7 @@ $mycurl "https://seekingalpha.com/symbol/"$1 |egrep -o 'class="symbol_latest_art
 echo "Rating================================"
 export sp500avgpe=`$mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev`
 echo -e "S&P500 PE:\t"$sp500avgpe
-export feargreed=`$mycurl https://money.cnn.com/data/fear-and-greed/ |egrep -o "Fear.+Greed Now: [0-9]+ \(\w+)" |cut -d':' -f2`
+export feargreed=`$mycurl https://money.cnn.com/data/fear-and-greed/ |egrep -o "Fear.+Greed Now: [0-9]+ \(\w+\)" |cut -d':' -f2`
 echo -e "Fear-Greed:\t"$feargreed
 #gurufocus biz predicability
 export predstar=`$mycurl "https://www.gurufocus.com/gurutrades/$1" |egrep -o "aria-valuenow=\"[0-9]" |cut -d'"' -f2`
@@ -54,8 +54,7 @@ export stoxline=`$mycurl "http://m.stoxline.com/stock.php?symbol=$1" |grep -A 2 
 
 #Argus Research from Yahoo
 $mychrome "https://finance.yahoo.com/quote/$1" > tmp 2>&1
-recommendation=`cat tmp |egrep -o 'data-reactid="11">[A-Za-z ]+<\/span>'  |grep -v -i help |cut -d'>' -f2 |cut -d'<' -f1`
-fairvalue=`cat tmp |egrep -o 'Fz\(12px\) Fw\(b\)" data\-reactid="[0-9]+">[A-Za-z ]+' |cut -d'>' -f2`
+fairvalue=`cat tmp |egrep -o 'Fw\(b\) Fl\(end\)\-\-m Fz\(s\).+'|cut -c1-80 |cut -d'>' -f2 |cut -d'<' -f1`
 [[ ! -z $recommendation ]] && echo -e "Argus Research:\t"$recommendation
 [[ ! -z $fairvalue      ]] && echo -e "Fair Value:\t"$fairvalue
 
@@ -127,3 +126,6 @@ egrep "^$1,"  foolrecentpick.csv |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20
 #Marketwatch games
 echo "Buy/Short--Holding%--#Rank in a MarketWatch Game---------------------------"
 egrep "^$1,"  marketwatchgames.csv  |awk -F',' '{printf "%-12s%-10s%-10s\n",$3,$2,$4}'
+
+gurufocus=$(egrep -w $1 gurufocus.csv)
+[[ ! -z $gurufocus ]] && echo "GuruFocus Latest Buy"
