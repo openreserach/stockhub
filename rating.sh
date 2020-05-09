@@ -32,19 +32,23 @@ export sp500avgpe=`$mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE
 echo -e "S&P500 PE:\t"$sp500avgpe
 export feargreed=`$mycurl https://money.cnn.com/data/fear-and-greed/ |egrep -o "Fear.+Greed Now: [0-9]+ \(\w+\)" |cut -d':' -f2`
 echo -e "Fear-Greed:\t"$feargreed
-#gurufocus biz predicability
-export predstar=`$mycurl "https://www.gurufocus.com/gurutrades/$1" |egrep -o "aria-valuenow=\"[0-9]" |cut -d'"' -f2`
-[[ ! -z $predstar ]] && echo -e "Predictability:\t"$predstar
+#gurufocus Financial Strength & Profitability Strength
+export FinancialStrength=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |tail -n 1)
+[[ ! -z $FinancialStrength ]] && echo -e "FinStrength:\t"$FinancialStrength
+export Profitability=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Profitability Rank' |egrep -A 1 fc-regular  |tail -n 1)
+[[ ! -z $Profitability ]] && echo -e "Profitability:\t"$Profitability
 
 #Crammer's MadMoney comments
 export madmoneyurl="https://madmoney.thestreet.com/07/index.cfm?page=lookup"
 export madmoneylookup="symbol=$1"
-$mycurl -d $madmoneylookup $madmoneyurl |tac |tac |egrep -m 1  ">[0-9]{2}/[0-9]{2}/200?" -A 20 >tmp #care the latest one
-export maddate=`cat tmp |egrep -o "[0-9]{2}/[0-9]{2}/20[0-9][0-9]"`
-export madbuysell=`cat tmp |egrep -o "[1-5]\.gif"|sed 's/.gif//g' |sed 's/5/SB/g'|sed 's/4/B/g'|sed 's/3/H/g'|sed 's/2/S/g'| sed 's/1/SS/g'`
-export madvalue=`cat tmp |egrep -o "[0-9]+\.[0-9]+"|head -n 1`
-export madchange=`cat tmp |egrep -o "\+ [0-9]+\.[0-9]+%|\- [0-9]+\.[0-9]+%"|tail -n 1`
-echo -e "Crammer:\t"$maddate $madbuysell $madvalue $madchange
+export dateratingprice=$($mycurl -s -d $madmoneylookup $madmoneyurl |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',')
+[[ ! -z $dateratingprice ]] && echo -e "Crammer:\t"$dateratingprice"#0:Sell.. 5:Buy"
+#$mycurl -d $madmoneylookup $madmoneyurl |tac |tac |egrep -m 1  ">[0-9]{2}/[0-9]{2}/200?" -A 20 >tmp #care the latest one
+#export maddate=`cat tmp |egrep -o "[0-9]{2}/[0-9]{2}/20[0-9][0-9]"`
+#export madbuysell=`cat tmp |egrep -o "[1-5]\.gif"|sed 's/.gif//g' |sed 's/5/SB/g'|sed 's/4/B/g'|sed 's/3/H/g'|sed 's/2/S/g'| sed 's/1/SS/g'`
+#export madvalue=`cat tmp |egrep -o "[0-9]+\.[0-9]+"|head -n 1`
+#export madchange=`cat tmp |egrep -o "\+ [0-9]+\.[0-9]+%|\- [0-9]+\.[0-9]+%"|tail -n 1`
+#echo -e "Crammer:\t"$maddate $madbuysell $madvalue $madchange
 
 export zack=`$mycurl "https://www.zacks.com/stock/quote/$1" |egrep -m1 "rank_chip" |cut -d'<' -f1 |sed 's/ //g'`
 [[ ! -z $zack ]] && echo -e "Zack Rank:\t"$zack
