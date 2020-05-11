@@ -129,7 +129,11 @@ egrep "^$1,"  foolrecentpick.csv |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20
 
 #Marketwatch games
 echo "Buy/Short--Holding%--#Rank in a MarketWatch Game---------------------------"
-egrep "^$1,"  marketwatchgames.csv  |awk -F',' '{printf "%-12s%-10s%-10s\n",$3,$2,$4}'
+egrep -w "^$1,"  marketwatchgames.csv  |awk -F',' '{printf "%-12s%-10s%-10s\n",$3,$2,$4}'
+
+#Whale Wisdom
+echo "Buy---#Recent filer---------------------------------------------------------"
+egrep -w "^$1,"  whalewisdom.csv  
 
 gurufocus=$(egrep -w $1 gurufocus.csv)
 [[ ! -z $gurufocus ]] && echo "GuruFocus Latest Buy"

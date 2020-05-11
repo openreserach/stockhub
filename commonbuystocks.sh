@@ -12,9 +12,11 @@ cat seekingalphalong.csv |sort >> tmp
 
 cat gurufocus.csv >> tmp
 
-cat tmp |sort |uniq -c |sort -r -n | awk '{if( $1>1 ){print $0} }' #|while read line
-#do
-  #ticker=$(echo $line |awk '{print $2}')
-  #cap=$(curl -stderr --http2 https://finviz.com/quote.ashx?t=$ticker  |egrep "Market Cap" |egrep -o "[0-9.]+B") #>1.0B cap size
-  #[[ ! -z $cap ]] && echo $line
-#done
+cat whalewisdom.csv |cut -d',' -f1 >> tmp
+
+cat tmp |sort |uniq -c |sort -r -n | awk '{if( $1>1 ){print $0} }' |while read line
+do #only filter out MarketCap>1B  
+  ticker=$(echo $line |awk '{print $2}')
+  cap=$(curl -s  https://www.tipranks.com/api/stocks/getData/?name=$ticker |jq .marketCap | awk '{if ($1>1000000000) {print $1}}')
+  [[ ! -z $cap ]] && echo $line
+done
