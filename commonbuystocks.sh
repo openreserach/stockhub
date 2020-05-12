@@ -12,7 +12,7 @@ cat seekingalphalong.csv |sort >> tmp
 
 cat gurufocus.csv >> tmp
 
-cat whalewisdom.csv |cut -d',' -f1 >> tmp
+cat whalewisdom*.csv |cut -d',' -f1 |sort |uniq >> tmp
 
 cat tmp |sort |uniq -c |sort -r -n | awk '{if( $1>1 ){print $0} }' |while read line
 do #only filter out MarketCap>1B  

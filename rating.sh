@@ -39,16 +39,11 @@ export Profitability=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep
 [[ ! -z $Profitability ]] && echo -e "Profitability:\t"$Profitability
 
 #Crammer's MadMoney comments
-export madmoneyurl="https://madmoney.thestreet.com/07/index.cfm?page=lookup"
-export madmoneylookup="symbol=$1"
-export dateratingprice=$($mycurl -s -d $madmoneylookup $madmoneyurl |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',')
-[[ ! -z $dateratingprice ]] && echo -e "Crammer:\t"$dateratingprice"#0:Sell.. 5:Buy"
-#$mycurl -d $madmoneylookup $madmoneyurl |tac |tac |egrep -m 1  ">[0-9]{2}/[0-9]{2}/200?" -A 20 >tmp #care the latest one
-#export maddate=`cat tmp |egrep -o "[0-9]{2}/[0-9]{2}/20[0-9][0-9]"`
-#export madbuysell=`cat tmp |egrep -o "[1-5]\.gif"|sed 's/.gif//g' |sed 's/5/SB/g'|sed 's/4/B/g'|sed 's/3/H/g'|sed 's/2/S/g'| sed 's/1/SS/g'`
-#export madvalue=`cat tmp |egrep -o "[0-9]+\.[0-9]+"|head -n 1`
-#export madchange=`cat tmp |egrep -o "\+ [0-9]+\.[0-9]+%|\- [0-9]+\.[0-9]+%"|tail -n 1`
-#echo -e "Crammer:\t"$maddate $madbuysell $madvalue $madchange
+#export madmoneyurl="https://madmoney.thestreet.com/07/index.cfm?page=lookup"
+#export madmoneylookup="symbol=$1"
+export dateratingprice=$($mycurl -s -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',')
+[[ ! -z $dateratingprice ]] && echo -e "Crammer:\t"$dateratingprice |sed -e 's/,1,/,Sell,/g' -e 's/,2,/,Negative,/g' -e 's/,3,/,Neural,/g' -e 's/,4,/,Postive,/g' -e 's/,5,/,Buy,/g'
+
 
 export zack=`$mycurl "https://www.zacks.com/stock/quote/$1" |egrep -m1 "rank_chip" |cut -d'<' -f1 |sed 's/ //g'`
 [[ ! -z $zack ]] && echo -e "Zack Rank:\t"$zack
@@ -57,14 +52,13 @@ export stoxline=`$mycurl "http://m.stoxline.com/stock.php?symbol=$1" |grep -A 2 
 [[ ! -z $stoxline ]] && echo -e "Stoxline:\t"$stoxline
 
 #Argus Research from Yahoo
-$mychrome "https://finance.yahoo.com/quote/$1" > tmp 2>&1
-fairvalue=`cat tmp |egrep -o 'Fw\(b\) Fl\(end\)\-\-m Fz\(s\).+'|cut -c1-80 |cut -d'>' -f2 |cut -d'<' -f1`
-[[ ! -z $recommendation ]] && echo -e "Argus Research:\t"$recommendation
-[[ ! -z $fairvalue      ]] && echo -e "Fair Value:\t"$fairvalue
+#$mychrome "https://finance.yahoo.com/quote/$1" > tmp 2>&1
+fairvalue=`$mycurl https://finance.yahoo.com/quote/$1  |egrep -o 'Fw\(b\) Fl\(end\)\-\-m Fz\(s\).+'|cut -c1-80 |cut -d'>' -f2 |cut -d'<' -f1`
+[[ ! -z $fairvalue ]] && echo -e "Fair Value:\t"$fairvalue
 
 #tipranks
 tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |sort |awk '{print $2}'|sed 's/,//g' |tr '\n' ',' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
-echo -e "TipRank:\t"$tiprank
+[[ ! -z $tiprank  ]] && echo -e "TipRank:\t"$tiprank
 
 #MotleyFool's rating to be replace motley api
 if [ ${FOOL_API_KEY} ] 
@@ -129,11 +123,11 @@ egrep "^$1,"  foolrecentpick.csv |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20
 
 #Marketwatch games
 echo "Buy/Short--Holding%--#Rank in a MarketWatch Game---------------------------"
-egrep -w "^$1,"  marketwatchgames.csv  |awk -F',' '{printf "%-12s%-10s%-10s\n",$3,$2,$4}'
+egrep "^$1,"  marketwatchgames.csv  |awk -F',' '{printf "%-12s%-10s%-10s\n",$3,$2,$4}'
 
 #Whale Wisdom
 echo "Buy---#Recent filer---------------------------------------------------------"
-egrep -w "^$1,"  whalewisdom.csv  
+egrep "^$1,"  whalewisdom*.csv
 
 gurufocus=$(egrep -w $1 gurufocus.csv)
 [[ ! -z $gurufocus ]] && echo "GuruFocus Latest Buy"
