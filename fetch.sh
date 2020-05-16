@@ -3,8 +3,9 @@
 ./fool.sh
 ./seekingalphalong.sh
 ./marketwatchgames.sh
-curl -s https://www.gurufocus.com/guru/latest-picks |egrep -B 50 'days ago'  |awk '/^Buy:/,/^Add:/' |egrep -v 'Buy:|Add:|<'  >  gurufocus.csv
-curl -s https://www.gurufocus.com/guru/latest-picks |egrep -B 50 'days ago'  |awk '/^Add:/,/^Sell:/'|egrep -v 'Add:|Sell:|<' >> gurufocus.csv
+
+curl -s https://www.gurufocus.com/guru/latest-picks |awk '/^Buy:/,/^Add:|^Sell:|^Reduce:/' |egrep -v 'Buy|Add|Sell|Reduce|<'     > gurufocus.csv
+curl -s https://www.gurufocus.com/guru/latest-picks |awk '/^Add:/,/^Sell:|^Reduce:|ago/'   |egrep -v 'Buy|Add|Sell|Reduce|<|ago'>> gurufocus.csv
 
 > whalewisdom-new.csv #new positions
 > whalewisdom-add.csv #added to existing positions

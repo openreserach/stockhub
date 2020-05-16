@@ -39,8 +39,6 @@ export Profitability=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep
 [[ ! -z $Profitability ]] && echo -e "Profitability:\t"$Profitability
 
 #Crammer's MadMoney comments
-#export madmoneyurl="https://madmoney.thestreet.com/07/index.cfm?page=lookup"
-#export madmoneylookup="symbol=$1"
 export dateratingprice=$($mycurl -s -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',')
 [[ ! -z $dateratingprice ]] && echo -e "Crammer:\t"$dateratingprice |sed -e 's/,1,/,Sell,/g' -e 's/,2,/,Negative,/g' -e 's/,3,/,Neural,/g' -e 's/,4,/,Postive,/g' -e 's/,5,/,Buy,/g'
 
@@ -52,7 +50,6 @@ export stoxline=`$mycurl "http://m.stoxline.com/stock.php?symbol=$1" |grep -A 2 
 [[ ! -z $stoxline ]] && echo -e "Stoxline:\t"$stoxline
 
 #Argus Research from Yahoo
-#$mychrome "https://finance.yahoo.com/quote/$1" > tmp 2>&1
 fairvalue=`$mycurl https://finance.yahoo.com/quote/$1  |egrep -o 'Fw\(b\) Fl\(end\)\-\-m Fz\(s\).+'|cut -c1-80 |cut -d'>' -f2 |cut -d'<' -f1`
 [[ ! -z $fairvalue ]] && echo -e "Fair Value:\t"$fairvalue
 
@@ -66,9 +63,10 @@ then  #apply for your own free key at http://developer.fool.com/, and set it in 
 	export star=`$mycurl "http://www.fool.com/a/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]"`
 	echo -e "MotelyFool:\t"$star" out of 5"
 fi
-$mycurl "https://x-uni.com/api/screener-gd.php?param=1;5;10;3;20;10" |sed 's/,"/\n/g' |egrep -o -w $1 |sed "s/$1/Graham-Dodd-Value/g"
-$mycurl "https://x-uni.com/api/screener-gf.php?params=2;;4.6"        |sed 's/,"/\n/g' |egrep -o -w $1 |sed "s/$1/Graham-Formula-Value/g"
-$mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
+#Value Stock screening
+curl -s "https://x-uni.com/api/screener-iv.php?params=30;;10000;;;;20;;;;;;;;;;;;;;;;;;;" |egrep -o -w $1 |sed "s/$1/Value Screen:\tIntrinsic Value/g"
+curl -s 'https://x-uni.com/api/screener-gd.php?params=0.5;5;10;3;20;10' |egrep -w -o $1 |sed "s/$1/Value Screen:\tGraham-Dodd Stock/g"
+curl -s 'https://x-uni.com/api/screener-gf.php?params=2;;4.6' |egrep -w -o $1 |sed "s/$1/Value Screen:\tGraham Formula Stock/g"
 
 echo "TA & Trend ==================================="
 $mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb="$1"&cobrand=&mode=stock" > tmp
@@ -124,6 +122,9 @@ egrep "^$1,"  foolrecentpick.csv |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20
 #Marketwatch games
 echo "Buy/Short--Holding%--#Rank in a MarketWatch Game---------------------------"
 egrep "^$1,"  marketwatchgames.csv  |awk -F',' '{printf "%-12s%-10s%-10s\n",$3,$2,$4}'
+
+#SeekingAlpha Long idea matches
+$mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
 
 #Whale Wisdom
 echo "Buy---#Recent filer---------------------------------------------------------"
