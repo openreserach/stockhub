@@ -30,7 +30,7 @@ $mycurl "https://seekingalpha.com/symbol/"$1 |egrep -o 'class="symbol_latest_art
 echo "Rating================================"
 export sp500avgpe=`$mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev`
 echo -e "S&P500 PE:\t"$sp500avgpe
-export feargreed=`$mycurl https://money.cnn.com/data/fear-and-greed/ |egrep -o "Fear.+Greed Now: [0-9]+ \(\w+\)" |cut -d':' -f2`
+export feargreed=`$mycurl https://money.cnn.com/data/fear-and-greed/ |egrep -o "Fear.+Greed Now: [0-9]+ \(\w+\)" |cut -d':' -f2 |sed 's/^ //g' `
 echo -e "Fear-Greed:\t"$feargreed
 #gurufocus Financial Strength & Profitability Strength
 export FinancialStrength=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |tail -n 1)
