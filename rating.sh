@@ -33,13 +33,15 @@ echo -e "S&P500 PE:\t"$sp500avgpe
 export feargreed=`$mycurl https://money.cnn.com/data/fear-and-greed/ |egrep -o "Fear.+Greed Now: [0-9]+ \(\w+\)" |cut -d':' -f2 |sed 's/^ //g' `
 echo -e "Fear-Greed:\t"$feargreed
 #gurufocus Financial Strength & Profitability Strength
-export FinancialStrength=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |tail -n 1)
-[[ ! -z $FinancialStrength ]] && echo -e "FinStrength:\t"$FinancialStrength
-export Profitability=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Profitability Rank' |egrep -A 1 fc-regular  |tail -n 1)
-[[ ! -z $Profitability ]] && echo -e "Profitability:\t"$Profitability
+export FinancialStrength=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+[[ ! -z $FinancialStrength ]] && echo -e "Strength:\t"$FinancialStrength
+export Profitability=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Profitability Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+[[ ! -z $Profitability ]] && echo -e "ProfitRank:\t"$Profitability
+export Valuation=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Valuation Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+[[ ! -z $Valuation ]] && echo -e "Valuation:\t"$Valuation
 
 #Crammer's MadMoney comments
-export dateratingprice=$($mycurl -s -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',')
+export dateratingprice=$($mycurl -s -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+|\$[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',')
 [[ ! -z $dateratingprice ]] && echo -e "Crammer:\t"$dateratingprice |sed -e 's/,1,/,Sell,/g' -e 's/,2,/,Negative,/g' -e 's/,3,/,Neural,/g' -e 's/,4,/,Postive,/g' -e 's/,5,/,Buy,/g'
 
 
@@ -64,9 +66,9 @@ then  #apply for your own free key at http://developer.fool.com/, and set it in 
 	echo -e "MotelyFool:\t"$star" out of 5"
 fi
 #Value Stock screening
-curl -s "https://x-uni.com/api/screener-iv.php?params=30;;10000;;;;20;;;;;;;;;;;;;;;;;;;" |egrep -o -w $1 |sed "s/$1/Value Screen:\tIntrinsic Value/g"
-curl -s 'https://x-uni.com/api/screener-gd.php?params=0.5;5;10;3;20;10' |egrep -w -o $1 |sed "s/$1/Value Screen:\tGraham-Dodd Stock/g"
-curl -s 'https://x-uni.com/api/screener-gf.php?params=2;;4.6' |egrep -w -o $1 |sed "s/$1/Value Screen:\tGraham Formula Stock/g"
+curl -s "https://x-uni.com/api/screener-iv.php?params=30;;10000;;;;20;;;;;;;;;;;;;;;;;;;" |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tIntrinsic Value/g"
+curl -s 'https://x-uni.com/api/screener-gd.php?params=0.5;5;10;3;20;10' |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tGraham-Dodd Stock/g"
+curl -s 'https://x-uni.com/api/screener-gf.php?params=2;;4.6' |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tGraham Formula Stock/g"
 
 echo "TA & Trend ==================================="
 $mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb="$1"&cobrand=&mode=stock" > tmp
