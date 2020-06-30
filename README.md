@@ -1,4 +1,4 @@
-stockhub
+/stockhub
 ========
 
 stockhub is a suite scripts that crawls investment web sites to fetch top performers' recent buy/sell transactions/ portfolios, and presents trading idea in seconds. The rationales of the tool is simply as follows: 

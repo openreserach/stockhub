@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mycurl="curl -s --max-time 3 -L -k --http2 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
+mycurl="curl -s --max-time 3 -L -k --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
 mychrome="google-chrome-stable --headless --disable-gpu --dump-dom" #headless browser to deal with more javascript
 
 $mycurl "https://www.finviz.com/quote.ashx?t=$1" > tmp
@@ -11,7 +11,7 @@ price=$(cat tmp|grep "Current stock price" |cut -d'>' -f5- |cut -d'<' -f1)
 updown=$(cat tmp |egrep 'Change</td>' |egrep -o "color.+"|cut -d'>' -f2 |cut -d'<' -f1)
 echo "$"$price $updown `date +%x`
 echo "FA color-coded=============================="
-for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'EPS next 5Y' 'Dividend %'
+for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'EPS next 5Y' 'Dividend %'
 do
 	color=`cat tmp |grep ">$key<" |egrep -o "color:#[0-9a]+" |cut -d':' -f2`
 	val=`cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<" |sed -e 's/>//g' -e 's/<//g'`
@@ -24,7 +24,7 @@ do
     fi
 done
 echo "News=================================="
-cat tmp |egrep "white-space:nowrap" |head -n 3 |egrep -o 'white-space:nowrap">\S+.+tab-link-news">.+</a>' |cut -d'>' -f2,5  |cut -c1-10,35- |cut -d'<' -f1
+cat tmp |egrep "white-space:nowrap" |head -n 3 |egrep -o 'white-space:nowrap">\S+.+tab-link-news">.+</a>' |cut -d'>' -f2,7  |cut -c1-10,35- |cut -d'<' -f1
 $mycurl "https://seekingalpha.com/symbol/"$1 |egrep -o 'class="symbol_latest_articles".+' |egrep -o '/news/.+' |egrep -o 'latest">.+' |cut -d'<' -f1 |cut -d'>' -f2
 
 echo "Rating================================"
