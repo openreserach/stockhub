@@ -23,6 +23,11 @@ do
 		echo -e "$key:\t\t$val"
     fi
 done
+$mycurl https://finviz.com/insidertrading.ashx |sed 's/tr/\n/g' |egrep -w $1 |egrep -o ">Buy<|>Sale<|>Option Exercise<" |sed -e 's/>//g' -e 's/<//g' |while read buysell
+do
+  echo -e "Insider:\t\t$buysell"
+done
+$mycurl https://finviz.com |egrep -w -A 5 $1 |egrep -B 5 -o "Stocks with .+"  |cut -d']' -f1
 echo "News=================================="
 cat tmp |egrep "white-space:nowrap" |head -n 3 |egrep -o 'white-space:nowrap">\S+.+tab-link-news">.+</a>' |cut -d'>' -f2,7  |cut -c1-10,35- |cut -d'<' -f1
 $mycurl "https://seekingalpha.com/symbol/"$1 |egrep -o 'class="symbol_latest_articles".+' |egrep -o '/news/.+' |egrep -o 'latest">.+' |cut -d'<' -f1 |cut -d'>' -f2
