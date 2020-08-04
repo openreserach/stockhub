@@ -23,7 +23,7 @@ do
 		echo -e "$key:\t\t$val"
     fi
 done
-$mycurl https://finviz.com/insidertrading.ashx |sed 's/tr/\n/g' |egrep -w $1 |egrep -o ">Buy<|>Sale<|>Option Exercise<" |sed -e 's/>//g' -e 's/<//g' |while read buysell
+$mycurl https://finviz.com/insidertrading.ashx |sed 's/tr/\n/g' |egrep -w "t=$1" |egrep -o ">Buy<|>Sale<|>Option Exercise<" |sed -e 's/>//g' -e 's/<//g' |while read buysell
 do
   echo -e "Insider:\t\t$buysell"
 done

@@ -10,7 +10,7 @@ done
 
 #Marketwatch stock trading games, contests and challenges
 >marketwatchgames.csv
-for game in lifetime-stock-market-game invest-until-you-die invest-until-you-die-two-2 official-reddit-challenge-2020 trades-for-life eths20192020
+for game in lifetime-stock-market-game invest-until-you-die invest-until-you-die-two-2 invest-until-you-die-4 official-reddit-challenge-2020 trades-for-life 2020ueic 
 do #annually pick active games with more participants
   for page in 0 10 20 30 40 50 
   do #the latst 50 pages 
