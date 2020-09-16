@@ -32,8 +32,7 @@ done
 $mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr '[:lower:]' '[:upper:]' > seekingalphalong.csv
 
 #Gurufocus latest picks
-$mycurl https://www.gurufocus.com/guru/latest-picks |awk '/^Buy:/,/^Add:|^Sell:|^Reduce:/' |egrep -v 'Buy|Add|Sell|Reduce|<'     > gurufocus.csv
-$mycurl https://www.gurufocus.com/guru/latest-picks |awk '/^Add:/,/^Sell:|^Reduce:|ago/'   |egrep -v 'Buy|Add|Sell|Reduce|<|ago'>> gurufocus.csv
+$mycurl https://www.gurufocus.com/guru/latest-picks |egrep '^Buy:|^Add:|Sell:|^Reduce:|^[A-Z]{1,5}$' |egrep -v "USA|RSS|FAQ|API|ETF" |egrep  '^[A-Z]+' |tr '\n' ',' |sed -e's/,Buy:/\nBuy:/g' -e 's/,Reduce:/\nReduce:/g' -e 's/,Sell:/\nSell:/g' -e 's/,Add:/\nAdd:/g' |sed 's/:,/:/g' |egrep -v ':$' > gurufocus.csv
 
 #whalewisdom.com guru recent positions 
 > whalewisdom-new.csv #new positions

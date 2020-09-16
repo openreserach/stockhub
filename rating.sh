@@ -102,7 +102,7 @@ echo "Radar Screen================================="
 $mycurl https://www.tradingview.com/symbols/NYSE-$1 > tmp
 $mycurl https://www.tradingview.com/symbols/NASDAQ-$1 >> tmp 
 $mycurl https://www.tradingview.com/symbols/AMEX-$1 >> tmp #NYSE, NASDAQ, AMEX add up
-echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" | awk '{printf "%-25s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
+echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" | awk '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
 cat tmp |egrep -A 40 -B 1 'tv-widget-idea__label tv-idea-label--[a-z]+' |egrep -o 'tv-idea-label--[a-z]+|href=\"/u/[A-Za-z0-9\_\.\-]+/|idea__timeframe">.+<|data-timestamp="[0-9.]+"' |sed -e 's/idea__timeframe">, \+//g' -e 's/tv-idea-label--//g' -e 's/href="\/u\//,/g' -e 's/data-timestamp="//g' |tr -d '\n'| sed  -e 's/</,/g'  -e 's/"/\n/g' -e 's/\//,/g' |while read post
 do
     timeframe=$(echo $post|cut -d',' -f1)
@@ -110,7 +110,7 @@ do
     user=$(echo $post|cut -d',' -f3)
     timestamp=$(date -d @`echo $post|cut -d',' -f4` +%Y%m%d)
     profile=$($mycurl https://www.tradingview.com/u/$user/ |egrep -B 1 'icon--reputation|icon--charts|icon--likes|icon--followers' |egrep "item-value" |cut -d'>' -f2 |cut -d '<' -f1 |tr '\n' ',') 
-    echo $user,$longshort,$timestamp,$timeframe,$profile |awk -F',' '{printf "%-25s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
+    echo $user,$longshort,$timestamp,$timeframe,$profile |awk -F',' '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
 done
 
 #stocktwits.com
@@ -138,4 +138,4 @@ echo "Buy---#Recent filer-------------------------------------------------------
 egrep "^$1,"  whalewisdom*.csv |sort | uniq
 
 #Gurufocus Latest Buy
-egrep -w $1 gurufocus.csv |while read guru; do echo "GuruFocus Latest Buy:"$guru; done
+egrep -w $1 gurufocus.csv |while read guru; do echo "GuruFocus Latest:"$guru; done

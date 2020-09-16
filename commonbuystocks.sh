@@ -10,7 +10,7 @@ cat $FOOLPICKS |awk -F',' '{if( $4>60.0 ){print $1} }' |sort  >> tmp
 
 cat seekingalphalong.csv |sort >> tmp
 
-cat gurufocus.csv >> tmp
+cat gurufocus.csv |cut -d':' -f2 |tr ',' '\n' >> tmp
 
 cat whalewisdom*.csv |cut -d',' -f1 |sort |uniq >> tmp
 
