@@ -127,8 +127,8 @@ echo "Fool Pick Date--Player--------------Rating--------------------------------
 egrep "^$1,"  foolrecentpick.csv |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20s%-9s\n",$5,$3,$4}'
 
 #Marketwatch games
-echo "Buy/Short--Holding%--#Rank in a MarketWatch Game---------------------------"
-egrep "^$1,"  marketwatchgames.csv  |awk -F',' '{printf "%-12s%-10s%-10s\n",$3,$2,$4}'
+echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"
+egrep "^$1,"  marketwatchgames.csv  |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$5}'
 
 #SeekingAlpha Long idea matches
 $mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"

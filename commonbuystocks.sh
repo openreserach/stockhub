@@ -2,8 +2,14 @@
 
 >tmp
 
-export MARKETWATCH=marketwatchgames.csv #Top 10 players' pick
-cat $MARKETWATCH |grep ',Buy,' |awk -F',' '{if( $4<10 ){print $0} }' |cut -d',' -f1 |sort  >> tmp
+export MARKETWATCH=marketwatchgames.csv 
+cat $MARKETWATCH |egrep ',Buy,' |while read line
+do #recent buy in last 7 days
+  transactionDate=$(echo $line |cut -d',' -f2)
+  transactionSec=$(date --date "$transactionDate" +'%s')   
+  weekagoSec=$(date --date "7 days ago" +'%s')
+  [ $transactionSec -gt $weekagoSec ] && echo $line |cut -d',' -f1  >> tmp  
+done
 
 export FOOLPICKS=foolrecentpick.csv #high rating (>60%) players' pick
 cat $FOOLPICKS |awk -F',' '{if( $4>60.0 ){print $1} }' |sort  >> tmp

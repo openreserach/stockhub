@@ -20,7 +20,7 @@ do #annually pick active games with more participants
  	    name=$(echo $portfolio |egrep -o 'name=\S+' |cut -d'=' -f2 |sed 's/%20/ /g')
 	    $mycurl -s "https://www.marketwatch.com/"$portfolio > tmp
 	    rank=$(cat tmp|egrep 'rank__number ">'  |cut -d'>' -f2 |cut -d'<' -f1)
-	    cat tmp  |egrep -A 9 '</mini-quote>' |egrep -o '[A-Z0-9]+<\/mini-quote>|class="primary">[0-9]+%|class="text">[A-Za-z]+' |cut -d'<' -f1 |cut -d'>' -f2 |tr  '\n' ',' |sed -e 's/Buy/Buy\n/g' -e 's/Short/Short\n/g' |sed 's/^,//g' |while read holding
+      cat tmp  |egrep -A 6 'mini-quote-tr' |cut -d'>' -f2- |tr -d "\r\n" |sed 's/--/\n/g' |sed 's/<\/td>/ /g' |awk '{print $1","$4","$6}' |while read holding
 	    do
 	      echo $holding,$rank,$portfolio >> marketwatchgames.csv
 	    done
