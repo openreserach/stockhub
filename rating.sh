@@ -64,12 +64,10 @@ fairvalue=`$mycurl https://finance.yahoo.com/quote/$1  |egrep -o 'Fw\(b\) Fl\(en
 tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |sort |awk '{print $2}'|sed 's/,//g' |tr '\n' ',' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
 [[ ! -z $tiprank  ]] && echo -e "TipRank:\t"$tiprank
 
-#MotleyFool's rating to be replace motley api
-if [ ${FOOL_API_KEY} ] 
-then  #apply for your own free key at http://developer.fool.com/, and set it in environment variable FOOL_API_KEY
-	export star=`$mycurl "http://www.fool.com/a/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]"`
-	echo -e "MotelyFool:\t"$star" out of 5"
-fi
+#MotleyFool's rating. Need free key from http://developer.fool.com/ Set it in environment variable or key/value store, e.g., repl.it's DB
+[[   -z $FOOL_API_KEY  ]] && FOOL_API_KEY=$(curl $REPLIT_DB_URL/FOOL_API_KEY) 
+[[ ! -z $FOOL_API_KEY  ]] && echo -e "MotelyFool:\t"$($mycurl "http://www.fool.com/a/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]")" out of 5"
+
 #Value Stock screening
 curl -s "https://x-uni.com/api/screener-iv.php?params=30;;10000;;;;20;;;;;;;;;;;;;;;;;;;" |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tIntrinsic Value/g"
 curl -s 'https://x-uni.com/api/screener-gd.php?params=0.5;5;10;3;20;10' |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tGraham-Dodd Stock/g"
@@ -128,7 +126,14 @@ egrep "^$1,"  foolrecentpick.csv |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20
 
 #Marketwatch games
 echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"
-egrep "^$1,"  marketwatchgames.csv  |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$5}'
+#egrep -w "^$1,"  marketwatchgames.csv |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$5}'
+egrep "^$1,"  marketwatchgames.csv |while read line
+do
+  transactionDate=$(echo $line |cut -d',' -f2)
+  transactionSec=$(date --date "$transactionDate" +'%s')   
+  weekagoSec=$(date --date "7 days ago" +'%s')
+  [ $transactionSec -gt $weekagoSec ] && echo $line |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$5}'
+done
 
 #SeekingAlpha Long idea matches
 $mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
