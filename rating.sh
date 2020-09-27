@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mycurl="curl -s --max-time 3 -L -k --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
+mycurl="curl -s --max-time 3 -L -k --ipv4 --http2 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
 mychrome="google-chrome-stable --headless --disable-gpu --dump-dom" #headless browser to deal with more javascript
 
 $mycurl "https://www.finviz.com/quote.ashx?t=$1" > tmp
@@ -11,10 +11,10 @@ price=$(cat tmp|grep "Current stock price" |cut -d'>' -f5- |cut -d'<' -f1)
 updown=$(cat tmp |egrep 'Change</td>' |egrep -o "color.+"|cut -d'>' -f2 |cut -d'<' -f1)
 echo "$"$price $updown `date +%x`
 echo "FA color-coded=============================="
-for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'EPS next 5Y' 'Dividend %' 'Earnings'
+for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'SMA20' 'Dividend %' 'Earnings'
 do
 	color=`cat tmp |grep ">$key<" |egrep -o "color:#[0-9a]+" |cut -d':' -f2`
-	val=`cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+" |sed -e 's/>//g' -e 's/<//g'`
+	val=`cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%" |sed -e 's/>//g' -e 's/<//g'`
 	if [ "$color" == '#aa0000' ]; then 
 		echo -e "$key:\t\t\e[00;31m$val\e[00m" 
 	elif [ "$color" == '#008800' ]; then 
@@ -65,7 +65,7 @@ tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker
 [[ ! -z $tiprank  ]] && echo -e "TipRank:\t"$tiprank
 
 #MotleyFool's rating. Need free key from http://developer.fool.com/ Set it in environment variable or key/value store, e.g., repl.it's DB
-[[   -z $FOOL_API_KEY  ]] && FOOL_API_KEY=$(curl $REPLIT_DB_URL/FOOL_API_KEY) 
+[[   -z $FOOL_API_KEY  ]] && FOOL_API_KEY=$(curl -s $REPLIT_DB_URL/FOOL_API_KEY) 
 [[ ! -z $FOOL_API_KEY  ]] && echo -e "MotelyFool:\t"$($mycurl "http://www.fool.com/a/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]")" out of 5"
 
 #Value Stock screening
@@ -108,39 +108,49 @@ do
     user=$(echo $post|cut -d',' -f3)
     timestamp=$(date -d @`echo $post|cut -d',' -f4` +%Y%m%d)
     profile=$($mycurl https://www.tradingview.com/u/$user/ |egrep -B 1 'icon--reputation|icon--charts|icon--likes|icon--followers' |egrep "item-value" |cut -d'>' -f2 |cut -d '<' -f1 |tr '\n' ',') 
-    echo $user,$longshort,$timestamp,$timeframe,$profile |awk -F',' '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
+
+    timestampSec=$(date --date "$timestamp" +'%s')   
+    monthagoSec=$(date --date "30 days ago" +'%s')
+    [ $timestampSec -gt $monthagoSec ] && echo $user,$longshort,$timestamp,$timeframe,$profile |awk -F',' '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
 done
 
 #stocktwits.com
-$mycurl -X GET https://api.stocktwits.com/api/2/streams/symbol/$1.json > tmp 
-echo "Stockwits Bull Time--Investor--------------------#Ideas--#Followers--#Likes"
-cat tmp |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
-|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}'
-echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"
-cat tmp |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
-|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}'
+$mycurl https://api.stocktwits.com/api/2/streams/symbol/$1.json 2>&1 > tmp1 
+cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
+|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
+[[ -s tmp ]] && echo "Stockwits Bull Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp
+cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
+|tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
+[[ -s tmp ]] && echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp
 
-#fool recent picks 
-echo "Fool Pick Date--Player--------------Rating---------------------------------"
-egrep "^$1,"  foolrecentpick.csv |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20s%-9s\n",$5,$3,$4}'
+>tmp #fool recent picks 
+egrep "^$1,"  foolrecentpick.csv |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20s%-9s\n",$5,$3,$4}' >> tmp
+[[ -s tmp ]] && echo "Fool Pick Date--Player--------------Rating---------------------------------"; cat tmp
 
-#Marketwatch games
-echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"
-#egrep -w "^$1,"  marketwatchgames.csv |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$5}'
+
+>tmp #Marketwatch games
 egrep "^$1,"  marketwatchgames.csv |while read line
 do
   transactionDate=$(echo $line |cut -d',' -f2)
   transactionSec=$(date --date "$transactionDate" +'%s')   
   weekagoSec=$(date --date "7 days ago" +'%s')
-  [ $transactionSec -gt $weekagoSec ] && echo $line |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$5}'
+  [ $transactionSec -gt $weekagoSec ] && echo $line |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$5}' >> tmp
 done
+[[ -s tmp ]] && echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp
 
-#SeekingAlpha Long idea matches
+>tmp #ARK investments ETF TOP 10 holdings
+for key in 'ARKW' 'ARKK' 'ARKG' 'ARKQ' 'ARKF' 'PRNT' 'IZRL'
+do
+  $mycurl 'https://ark-funds.com/auto/gettopten.php' -d "ticker=$key" |sed 's/td/\n/g' |egrep -w ">$1<" |sed -e 's/>//g' -e 's/<//g' -e 's/\///g' | while read ark; do echo $key": "$ark >>tmp; done
+done 
+[[ -s tmp ]] && echo "ARK investment TOP 10 holdings----------------------------------------------";cat tmp
+
+> tmp #Whale Wisdom
+egrep "^$1,"  whalewisdom*.csv |sort | uniq >> tmp
+[[ -s tmp ]] && echo "Whalewis Buy-------#Recent filer---------------------------------------------";cat tmp
+
+#SeekingAlpha Long ideas
 $mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
-
-#Whale Wisdom
-echo "Buy---#Recent filer---------------------------------------------------------"
-egrep "^$1,"  whalewisdom*.csv |sort | uniq
 
 #Gurufocus Latest Buy
 egrep -w $1 gurufocus.csv |while read guru; do echo "GuruFocus Latest:"$guru; done
