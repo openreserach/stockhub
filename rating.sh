@@ -154,3 +154,6 @@ $mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o 
 
 #Gurufocus Latest Buy
 egrep -w $1 gurufocus.csv |while read guru; do echo "GuruFocus Latest:"$guru; done
+
+#Barron's Picks & Pans
+$mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron; do echo "Barron's Picks:"$barron; done
