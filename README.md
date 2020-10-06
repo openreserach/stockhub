@@ -14,3 +14,4 @@ The tool is implemented by light-weighted shell scripts. You can run it on any L
 Disclaimer: Totally for fun. 
 
 
+./
