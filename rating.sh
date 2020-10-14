@@ -81,7 +81,7 @@ candlestick=`cat tmp |egrep -A 2 CandleStick |egrep -o 'Recent CandleStick Analy
 [[ ! -z $candlestick ]] && echo -e "Candle Stick:\t"$candlestick
 
 export barchart=$($mycurl "https://www.barchart.com/stocks/quotes/$1/"  |egrep -o 'buy-color">[A-Za-z ]+</a>' |cut -d'>' -f2 |cut -d'<' -f1 |sed 's/^ \+//g')
-[[ ! -z $barchart ]] && echo -e "Barchart:\t"$barchart
+[[ ! -z $barchart ]] && echo -e "Chart Signal:\t"$barchart
 
 #TA pattern
 export signal= $($mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker="$1 |egrep "MainContent_LastSignal"  |egrep -o ">[A-Z ]+</font>" |cut -d'<' -f1|cut -d'>' -f2)
@@ -94,6 +94,9 @@ pretiming=`$mycurl "https://www.pretiming.com/search?q=$1" |egrep -A 5  -m1 "Rec
 
 oversold=`$mycurl "https://www.tradingview.com/markets/stocks-usa/market-movers-oversold" |egrep -o 'data-symbol="NASDAQ:[A-Z]+|data-symbol="NYSE:[A-Z]+' |cut -d':' -f2 |egrep -w $1`
 [[ ! -z $oversold ]] && echo -e "TradingView:\tOversold"
+
+shortinterest=$($mycurl https://www.highshortinterest.com/all/ |egrep -o "q?s=[A-Z\.]+" |cut -d'=' -f2 |egrep -i $1)
+[[ ! -z $shortinterest ]] && echo -e "Short Interest:\tHigh"
 
 echo "Radar Screen================================="
 #Trading view
