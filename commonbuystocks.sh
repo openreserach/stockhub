@@ -20,7 +20,7 @@ cat gurufocus.csv |egrep "Buy:|Add:" |cut -d':' -f2 |tr ',' '\n' >> tmp
 
 cat whalewisdom*.csv |cut -d',' -f1 |sort |uniq >> tmp
 
-cat tmp |sort |uniq -c |sort -r -n | egrep -v '\s+1|\s+2'  |while read line
+cat tmp |sort |uniq -c |sort -r -n | egrep -v '\s+1\s|\s+2\s'  |while read line
 do #picked by more than 3+ sources  
   ticker=$(echo $line |awk '{print $2}')
   cap=$(curl -s  https://www.tipranks.com/api/stocks/getData/?name=$ticker |jq .marketCap | awk '{if ($1>1000000000) {print $1}}')

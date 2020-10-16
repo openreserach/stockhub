@@ -7,17 +7,17 @@ $mycurl "https://www.finviz.com/quote.ashx?t=$1" > tmp
 cat tmp|grep "<title>" |cut -d'>' -f2 |cut -d'<' -f1 |sed 's/Stock Quote//g'
 cat tmp|grep center |grep fullview-links |grep tab-link |cut -d'>' -f4,6,8 |sed 's/<\/a/ /g'
 
-price=$(cat tmp|grep "Current stock price" |cut -d'>' -f5- |cut -d'<' -f1)
-updown=$(cat tmp |egrep 'Change</td>' |egrep -o "color.+"|cut -d'>' -f2 |cut -d'<' -f1)
+price=$(cat tmp |egrep "Current stock price" |egrep -o '>[0-9.]+<' |cut -d'>' -f2 |cut -d'<' -f1)
+updown=$(cat tmp |egrep "Change</td>" |egrep -o '>[0-9.]+%<|>\-[0-9.]+%<' |cut -d'>' -f2 |cut -d'<' -f1)
 echo "$"$price $updown `date +%x`
 echo "FA color-coded=============================="
 for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'SMA20' 'Dividend %' 'Earnings'
 do
-	color=`cat tmp |grep ">$key<" |egrep -o "color:#[0-9a]+" |cut -d':' -f2`
-	val=`cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%" |sed -e 's/>//g' -e 's/<//g'`
-	if [ "$color" == '#aa0000' ]; then 
+	color=$(cat tmp |grep ">$key<" |egrep -o "is-red|is-green")
+	val=$(cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%" |sed -e 's/>//g' -e 's/<//g')
+	if [ "$color" == 'is-red' ]; then 
 		echo -e "$key:\t\t\e[00;31m$val\e[00m" 
-	elif [ "$color" == '#008800' ]; then 
+	elif [ "$color" == 'is-green' ]; then 
 		echo -e "$key:\t\t\e[00;32m$val\e[00m" 
 	else 
 		echo -e "$key:\t\t$val"
