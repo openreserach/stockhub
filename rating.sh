@@ -11,7 +11,7 @@ price=$(cat tmp |egrep "Current stock price" |egrep -o '>[0-9.]+<' |cut -d'>' -f
 updown=$(cat tmp |egrep "Change</td>" |egrep -o '>[0-9.]+%<|>\-[0-9.]+%<' |cut -d'>' -f2 |cut -d'<' -f1)
 echo "$"$price $updown `date +%x`
 echo "FA color-coded=============================="
-for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'SMA20' 'Dividend %' 'Earnings'
+for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'SMA20' 'Target Price' 'Dividend %' 'Earnings'
 do
 	color=$(cat tmp |grep ">$key<" |egrep -o "is-red|is-green")
 	val=$(cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%" |sed -e 's/>//g' -e 's/<//g')
@@ -141,13 +141,6 @@ do
 done
 [[ -s tmp ]] && echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp
 
->tmp #ARK investments ETF TOP 10 holdings
-for key in 'ARKW' 'ARKK' 'ARKG' 'ARKQ' 'ARKF' 'PRNT' 'IZRL'
-do
-  $mycurl 'https://ark-funds.com/auto/gettopten.php' -d "ticker=$key" |sed 's/td/\n/g' |egrep -w ">$1<" |sed -e 's/>//g' -e 's/<//g' -e 's/\///g' | while read ark; do echo $key": "$ark >>tmp; done
-done 
-[[ -s tmp ]] && echo "ARK investment TOP 10 holdings----------------------------------------------";cat tmp
-
 > tmp #Whale Wisdom
 egrep "^$1,"  whalewisdom*.csv |sort | uniq >> tmp
 [[ -s tmp ]] && echo "Whalewis Buy-------#Recent filer---------------------------------------------";cat tmp
@@ -160,3 +153,6 @@ egrep -w $1 gurufocus.csv |while read guru; do echo "GuruFocus Latest:"$guru; do
 
 #Barron's Picks & Pans
 $mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron; do echo "Barron's Picks:"$barron; done
+
+#ARK investment 
+egrep -w $1 ark.csv |while read ark; do echo $ark; done
