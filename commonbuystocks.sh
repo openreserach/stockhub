@@ -3,7 +3,7 @@
 >tmp
 
 export MARKETWATCH=marketwatchgames.csv 
-cat $MARKETWATCH |egrep ',Buy,' |while read line
+cat $MARKETWATCH |egrep ',Buy,' |sort |uniq |while read line
 do #recent buy in last 7 days
   transactionDate=$(echo $line |cut -d',' -f2)
   transactionSec=$(date --date "$transactionDate" +'%s')   

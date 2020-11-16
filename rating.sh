@@ -1,7 +1,6 @@
 #!/bin/bash
 
 mycurl="curl -s --max-time 3 -L -k --ipv4 --http2 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
-mychrome="google-chrome-stable --headless --disable-gpu --dump-dom" #headless browser to deal with more javascript
 
 $mycurl "https://www.finviz.com/quote.ashx?t=$1" > tmp
 cat tmp|grep "<title>" |cut -d'>' -f2 |cut -d'<' -f1 |sed 's/Stock Quote//g'
@@ -11,10 +10,10 @@ price=$(cat tmp |egrep "Current stock price" |egrep -o '>[0-9.]+<' |cut -d'>' -f
 updown=$(cat tmp |egrep "Change</td>" |egrep -o '>[0-9.]+%<|>\-[0-9.]+%<' |cut -d'>' -f2 |cut -d'<' -f1)
 echo "$"$price $updown `date +%x`
 echo "FA color-coded=============================="
-for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/C' 'P/FCF' 'P/B' 'Debt/Eq' 'Current Ratio' 'ROA' 'ROE' 'SMA20' 'Target Price' 'Dividend %' 'Earnings'
+for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/B' 'Current Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'Target Price' 'Recom' 'Beta' 'Inst Own' 'Dividend %' 'Earnings' 
 do
 	color=$(cat tmp |grep ">$key<" |egrep -o "is-red|is-green")
-	val=$(cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%" |sed -e 's/>//g' -e 's/<//g')
+	val=$(cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%" |tail -n 1 |sed -e 's/>//g' -e 's/<//g')
 	if [ "$color" == 'is-red' ]; then 
 		echo -e "$key:\t\t\e[00;31m$val\e[00m" 
 	elif [ "$color" == 'is-green' ]; then 
@@ -33,10 +32,6 @@ cat tmp |egrep "white-space:nowrap" |head -n 3 |egrep -o 'white-space:nowrap">\S
 $mycurl "https://seekingalpha.com/symbol/"$1 |egrep -o 'class="symbol_latest_articles".+' |egrep -o '/news/.+' |egrep -o 'latest">.+' |cut -d'<' -f1 |cut -d'>' -f2
 
 echo "Rating================================"
-export sp500avgpe=`$mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev`
-echo -e "S&P500 PE:\t"$sp500avgpe
-export feargreed=`$mycurl https://money.cnn.com/data/fear-and-greed/ |egrep -o "Fear.+Greed Now: [0-9]+ \([A-Za-z ]+\)" |cut -d':' -f2 |sed 's/^ //g' `
-echo -e "Fear-Greed:\t"$feargreed
 #gurufocus Financial Strength & Profitability Strength
 export FinancialStrength=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $FinancialStrength ]] && echo -e "Strength:\t"$FinancialStrength
