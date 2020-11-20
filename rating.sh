@@ -140,6 +140,14 @@ done
 egrep "^$1,"  whalewisdom*.csv |sort | uniq >> tmp
 [[ -s tmp ]] && echo "Whalewis Buy-------#Recent filer---------------------------------------------";cat tmp
 
+egrep -q ",$1" ark.csv
+[[ $? == 0 ]] && echo "Fund:-Old Date---New Date-:Share Changes------------------------" #Ark Investment tracked by arktrack.com
+$mycurl 'https://www.arktrack.com/ARKW.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKW:"$1"-"$3":"$4-$2}'
+$mycurl 'https://www.arktrack.com/ARKK.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKK:"$1"-"$3":"$4-$2}'
+$mycurl 'https://www.arktrack.com/ARKQ.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKQ:"$1"-"$3":"$4-$2}'
+$mycurl 'https://www.arktrack.com/ARKG.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKG:"$1"-"$3":"$4-$2}'
+$mycurl 'https://www.arktrack.com/ARKF.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKF:"$1"-"$3":"$4-$2}'
+
 #SeekingAlpha Long ideas
 $mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
 
@@ -148,6 +156,3 @@ egrep -w $1 gurufocus.csv |while read guru; do echo "GuruFocus Latest:"$guru; do
 
 #Barron's Picks & Pans
 $mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron; do echo "Barron's Picks:"$barron; done
-
-#ARK investment 
-egrep -w $1 ark.csv |while read ark; do echo $ark; done
