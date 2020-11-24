@@ -1,6 +1,12 @@
 #!/bin/bash
 
 mycurl="curl -s --max-time 3 -L -k --ipv4 --http2 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
+set -- $(echo $1 |tr [:lower:] [:upper:]) #reset ticker to upper case
+FOOL="foolrecentpick.csv"
+GAMES="marketwatchgames.csv"
+WHALEWISDOM="whalewisdom*.csv"
+ARK="ark.csv"
+GURUFOCUS="gurufocus.csv"
 
 $mycurl "https://www.finviz.com/quote.ashx?t=$1" > tmp
 cat tmp|grep "<title>" |cut -d'>' -f2 |cut -d'<' -f1 |sed 's/Stock Quote//g'
@@ -59,9 +65,9 @@ fairvalue=`$mycurl https://finance.yahoo.com/quote/$1  |egrep -o 'Fw\(b\) Fl\(en
 tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |sort |awk '{print $2}'|sed 's/,//g' |tr '\n' ',' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
 [[ ! -z $tiprank  ]] && echo -e "TipRank:\t"$tiprank
 
-#MotleyFool's rating. Need free key from http://developer.fool.com/ Set it in environment variable or key/value store, e.g., repl.it's DB
-[[   -z $FOOL_API_KEY  ]] && FOOL_API_KEY=$(curl -s $REPLIT_DB_URL/FOOL_API_KEY) 
-[[ ! -z $FOOL_API_KEY  ]] && echo -e "MotelyFool:\t"$($mycurl "http://www.fool.com/a/caps/ws/Ticker/$1?apikey=$FOOL_API_KEY" |egrep -o 'Percentile="[0-5]"' |egrep -o "[0-5]")" out of 5"
+#MotleyFool's rating. 
+export motelyfool=$($mycurl https://caps.fool.com/Ticker/$1.aspx |egrep "capsStarRating" |head -n 1 |egrep -o "[0-9] out of 5")
+[[ ! -z $motelyfool ]] && echo -e "MotelyFool:\t"$motelyfool
 
 #Value Stock screening
 curl -s "https://x-uni.com/api/screener-iv.php?params=30;;10000;;;;20;;;;;;;;;;;;;;;;;;;" |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tIntrinsic Value/g"
@@ -121,13 +127,13 @@ cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.creat
 |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
 [[ -s tmp ]] && echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp
 
->tmp #fool recent picks 
-egrep "^$1,"  foolrecentpick.csv |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20s%-9s\n",$5,$3,$4}' >> tmp
+#fool recent picks 
+egrep "^$1,"  $FOOL |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20s%-9s\n",$5,$3,$4}' > tmp
 [[ -s tmp ]] && echo "Fool Pick Date--Player--------------Rating---------------------------------"; cat tmp
 
 
 >tmp #Marketwatch games
-egrep "^$1,"  marketwatchgames.csv |while read line
+egrep "^$1,"  $GAMES |while read line
 do
   transactionDate=$(echo $line |cut -d',' -f2)
   transactionSec=$(date --date "$transactionDate" +'%s')   
@@ -136,23 +142,24 @@ do
 done
 [[ -s tmp ]] && echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp
 
-> tmp #Whale Wisdom
-egrep "^$1,"  whalewisdom*.csv |sort | uniq >> tmp
+#Whale Wisdom
+egrep "^$1," $WHALEWISDOM |sort | uniq > tmp
 [[ -s tmp ]] && echo "Whalewis Buy-------#Recent filer---------------------------------------------";cat tmp
 
-egrep -q ",$1" ark.csv
-[[ $? == 0 ]] && echo "Fund:-Old Date---New Date-:Share Changes------------------------"; #Ark Investment tracked by arktrack.com
-$mycurl 'https://www.arktrack.com/ARKW.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKW:"$1"-"$3":"$4-$2}';
-$mycurl 'https://www.arktrack.com/ARKK.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKK:"$1"-"$3":"$4-$2}';
-$mycurl 'https://www.arktrack.com/ARKQ.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKQ:"$1"-"$3":"$4-$2}';
-$mycurl 'https://www.arktrack.com/ARKG.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKG:"$1"-"$3":"$4-$2}';
-$mycurl 'https://www.arktrack.com/ARKF.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKF:"$1"-"$3":"$4-$2}'
+if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.com
+  echo "Fund:-Old Date---New Date-:Share Changes------------------------"; #Ark Investment tracked by arktrack.com
+  $mycurl 'https://www.arktrack.com/ARKW.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKW:"$1"-"$3":"$4-$2}'
+  $mycurl 'https://www.arktrack.com/ARKK.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKK:"$1"-"$3":"$4-$2}'
+  $mycurl 'https://www.arktrack.com/ARKQ.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKQ:"$1"-"$3":"$4-$2}'
+  $mycurl 'https://www.arktrack.com/ARKG.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKG:"$1"-"$3":"$4-$2}'
+  $mycurl 'https://www.arktrack.com/ARKF.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKF:"$1"-"$3":"$4-$2}'
+fi
 
 #SeekingAlpha Long ideas
 $mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
 
 #Gurufocus Latest Buy
-egrep -w $1 gurufocus.csv |while read guru; do echo "GuruFocus Latest:"$guru; done
+egrep -w $1 $GURUFOCUS |while read guru; do echo "GuruFocus Latest:"$guru; done
 
 #Barron's Picks & Pans
 $mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron; do echo "Barron's Picks:"$barron; done
