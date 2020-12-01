@@ -95,7 +95,7 @@ export pattern=$($mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&
 pretiming=`$mycurl "https://www.pretiming.com/search?q=$1" |egrep -A 5  -m1 "Recommended Positions"  |tail -n 1 |egrep -o -i "long-bullish|long-bearish|short-bullish|short-bearish"`
 [[ ! -z $pretiming ]] && echo -e "PreTiming TA:\t"$pretiming
 
-oversold=`$mycurl "https://www.tradingview.com/markets/stocks-usa/market-movers-oversold" |egrep -o 'data-symbol="NASDAQ:[A-Z]+|data-symbol="NYSE:[A-Z]+' |cut -d':' -f2 |egrep -w $1`
+oversold=`$mycurl "https://www.tradingview.com/markets/stocks-usa/market-movers-oversold"|egrep "window.initData.screener_data" |egrep -o "NYSE:[A-Z]+|NASDAQ:[A-Z]+|AMEX:[A-Z]+"|egrep -w $1`
 [[ ! -z $oversold ]] && echo -e "TradingView:\tOversold"
 
 shortinterest=$($mycurl https://www.highshortinterest.com/all/ |egrep -o "q?s=[A-Z\.]+" |cut -d'=' -f2 |egrep -i $1)
@@ -107,17 +107,17 @@ $mycurl https://www.tradingview.com/symbols/NYSE-$1 > tmp
 $mycurl https://www.tradingview.com/symbols/NASDAQ-$1 >> tmp 
 $mycurl https://www.tradingview.com/symbols/AMEX-$1 >> tmp #NYSE, NASDAQ, AMEX add up
 echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" | awk '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
-cat tmp |egrep -A 40 -B 1 'tv-widget-idea__label tv-idea-label--[a-z]+' |egrep -o 'tv-idea-label--[a-z]+|href=\"/u/[A-Za-z0-9\_\.\-]+/|idea__timeframe">.+<|data-timestamp="[0-9.]+"' |sed -e 's/idea__timeframe">, \+//g' -e 's/tv-idea-label--//g' -e 's/href="\/u\//,/g' -e 's/data-timestamp="//g' |tr -d '\n'| sed  -e 's/</,/g'  -e 's/"/\n/g' -e 's/\//,/g' |while read post
+cat tmp |egrep  -A 45 -B 1 "idea__label tv-idea-label--long|idea__label tv-idea-label--short" |egrep -o "idea-label--long|idea-label--short|data-username=\"\S+\"|data-timestamp=\"[0-9]+.[0-9]|idea__timeframe\">, [0-9DWM]+<" |sed -e 's/idea__timeframe">, //g' -e 's/idea-label--//g' -e 's/data-username="//g' -e 's/data-timestamp=\"//g' -e 's/<//g' -e 's/"//g' |tr '\n' ','|sed 's/\.0,/\n/g' \
+|while read post
 do
-    timeframe=$(echo $post|cut -d',' -f1)
-    longshort=$(echo $post|cut -d',' -f2)
-    user=$(echo $post|cut -d',' -f3)
-    timestamp=$(date -d @`echo $post|cut -d',' -f4` +%Y%m%d)
-    profile=$($mycurl https://www.tradingview.com/u/$user/ |egrep -B 1 'icon--reputation|icon--charts|icon--likes|icon--followers' |egrep "item-value" |cut -d'>' -f2 |cut -d '<' -f1 |tr '\n' ',') 
-
-    timestampSec=$(date --date "$timestamp" +'%s')   
-    monthagoSec=$(date --date "30 days ago" +'%s')
-    [ $timestampSec -gt $monthagoSec ] && echo $user,$longshort,$timestamp,$timeframe,$profile |awk -F',' '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
+  timeframe=$(echo $post|cut -d',' -f1)
+  longshort=$(echo $post|cut -d',' -f2)
+  user=$(echo $post|cut -d',' -f3)
+  timestamp=$(date -d @`echo $post|cut -d',' -f4` +%Y%m%d)
+  profile=$($mycurl https://www.tradingview.com/u/$user/ |egrep -B 1 'icon--reputation|icon--charts|icon--likes|icon--followers' |egrep "item-value" |cut -d'>' -f2 |cut -d '<' -f1 |tr '\n' ',')
+  timestampSec=$(date --date "$timestamp" +'%s')   
+  monthagoSec=$(date --date "30 days ago" +'%s')
+  [ $timestampSec -gt $monthagoSec ] && echo $user,$longshort,$timestamp,$timeframe,$profile |awk -F',' '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
 done
 
 #stocktwits.com
