@@ -28,6 +28,9 @@ do
 		echo -e "$key:\t\t$val"
     fi
 done
+etf=$($mycurl "https://etfdb.com/stock/$1/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%"|cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')
+[[ ! -z $etf ]] && echo -e "ETF:\t\t"$etf #ETF largest exposure
+
 $mycurl https://finviz.com/insidertrading.ashx |sed 's/tr/\n/g' |egrep -w "t=$1" |egrep -o ">Buy<|>Sale<|>Option Exercise<" |sed -e 's/>//g' -e 's/<//g' |while read buysell
 do
   echo -e "Insider:\t\t$buysell"
@@ -35,7 +38,6 @@ done
 $mycurl https://finviz.com |egrep -w -A 5 $1 |egrep -B 5 -o "Stocks with .+"  |cut -d']' -f1
 echo "News=================================="
 cat tmp |egrep "white-space:nowrap" |head -n 3 |egrep -o 'white-space:nowrap">\S+.+tab-link-news">.+</a>' |cut -d'>' -f2,7  |cut -c1-10,35- |cut -d'<' -f1
-$mycurl "https://seekingalpha.com/symbol/"$1 |egrep -o 'class="symbol_latest_articles".+' |egrep -o '/news/.+' |egrep -o 'latest">.+' |cut -d'<' -f1 |cut -d'>' -f2
 
 echo "Rating================================"
 #gurufocus Financial Strength & Profitability Strength
@@ -156,7 +158,7 @@ if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.c
 fi
 
 #SeekingAlpha Long ideas
-$mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |tr [:lower:]  [:upper:]|egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
+$mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
 
 #Gurufocus Latest Buy
 egrep -w $1 $GURUFOCUS |while read guru; do echo "GuruFocus Latest:"$guru; done

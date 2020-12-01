@@ -61,6 +61,7 @@ do
     echo $add","$filer >> whalewisdom-add.csv
   done
 done
+echo "."
 
 >ark.csv
 $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv"                       |egrep ARKK |cut -d',' -f2,4 |egrep -v "ARKK,$" >> ark.csv
