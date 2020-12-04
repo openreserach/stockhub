@@ -2,14 +2,13 @@
 
 mycurl="curl -s --max-time 3 -L -k --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
 
+rm -f *.csv tmp*
 echo "Market Overview=============="
 export sp500avgpe=$($mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev)
 echo -e "S&P500 PE:\t"$sp500avgpe
-#export feargreed=$( $mycurl "https://money.cnn.com/data/fear-and-greed/" |egrep -o "Fear.+Greed Now: [0-9]+ \([A-Za-z ]+\)" |cut -d':' -f2 |sed 's/^ //g')
-export feargreed=$( $mycurl "https://money.cnn.com/data/fear-and-greed/" |egrep  -o 'Fear.+Greed Now: [0-9]+ [(A-Za-z )]+' |cut -d':' -f2 |sed 's/^ //g')
-echo -e "FearGreed:\t"$feargreed
-crashindex=$($mycurl "https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly" |jq ".dataset_data.data[0]"  |tail -n +3 |head -n 1|sed -e 's/ //g' -e 's/,//g')
-echo -e "CrashIndex:\t"$crashindex
+echo -e "FearGreed:\t"$($mycurl "https://money.cnn.com/data/fear-and-greed/" |egrep  -o 'Fear.+Greed Now: [0-9]+ [(A-Za-z )]+' |cut -d":" -f2 |sed "s/^ //g")
+export YALE_CRASH_INDEX="https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly"
+echo -e "CrashIndex:\t"$($mycurl $YALE_CRASH_INDEX |jq ".dataset_data.data[0]"  |tail -n +3 |head -n 1|sed -e 's/ //g' -e 's/,//g')
 
 #MotleyFool players' recent trading 
 >foolrecentpick.csv

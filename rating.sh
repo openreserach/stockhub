@@ -107,17 +107,18 @@ $mycurl https://www.tradingview.com/symbols/NYSE-$1 > tmp
 $mycurl https://www.tradingview.com/symbols/NASDAQ-$1 >> tmp 
 $mycurl https://www.tradingview.com/symbols/AMEX-$1 >> tmp #NYSE, NASDAQ, AMEX add up
 echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" | awk '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
-cat tmp |egrep  -A 45 -B 1 "idea__label tv-idea-label--long|idea__label tv-idea-label--short" |egrep -o "idea-label--long|idea-label--short|data-username=\"\S+\"|data-timestamp=\"[0-9]+.[0-9]|idea__timeframe\">, [0-9DWM]+<" |sed -e 's/idea__timeframe">, //g' -e 's/idea-label--//g' -e 's/data-username="//g' -e 's/data-timestamp=\"//g' -e 's/<//g' -e 's/"//g' |tr '\n' ','|sed 's/\.0,/\n/g' \
-|while read post
-do
-  timeframe=$(echo $post|cut -d',' -f1)
-  longshort=$(echo $post|cut -d',' -f2)
-  user=$(echo $post|cut -d',' -f3)
-  timestamp=$(date -d @`echo $post|cut -d',' -f4` +%Y%m%d)
-  profile=$($mycurl https://www.tradingview.com/u/$user/ |egrep -B 1 'icon--reputation|icon--charts|icon--likes|icon--followers' |egrep "item-value" |cut -d'>' -f2 |cut -d '<' -f1 |tr '\n' ',')
+cat tmp |egrep  -A 45 -B 1 "idea__label tv-idea-label--long|idea__label tv-idea-label--short" |egrep -o "idea-label--long|idea-label--short|data-username=\"\S+\"|data-timestamp=\"[0-9]+.[0-9]|idea__timeframe\">, [0-9DWM]+<" |sed -e 's/idea__timeframe">, //g' -e 's/idea-label--//g' -e 's/data-username="//g' -e 's/data-timestamp=\"//g' -e 's/<//g' -e 's/"//g' |tr '\n' ','|sed 's/\.0,/\n/g' |awk -F',' '{if (NF>3) print $1","$2","$3","$4}' |while read post
+do  
+  timestamp=$(date -d @`echo $post|cut -d',' -f4` +%Y%m%d)  
   timestampSec=$(date --date "$timestamp" +'%s')   
-  monthagoSec=$(date --date "30 days ago" +'%s')
-  [ $timestampSec -gt $monthagoSec ] && echo $user,$longshort,$timestamp,$timeframe,$profile |awk -F',' '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
+  monthagoSec=$(date --date "30 days ago" +'%s')  
+  if [ $timestampSec -gt $monthagoSec ]; then 
+    timeframe=$(echo $post|cut -d',' -f1)
+    longshort=$(echo $post|cut -d',' -f2)
+    user=$(echo $post|cut -d',' -f3)
+    profile=$($mycurl https://www.tradingview.com/u/$user/|egrep -B 1 'icon--reputation|icon--charts|icon--likes|icon--followers'|egrep "item-value"|cut -d'>' -f2|cut -d '<' -f1|tr '\n' ',')
+    echo $user,$longshort,$timestamp,$timeframe,$profile |awk -F',' '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'
+  fi  
 done
 
 #stocktwits.com
@@ -146,7 +147,15 @@ done
 
 #Whale Wisdom
 egrep "^$1," $WHALEWISDOM |sort | uniq > tmp
-[[ -s tmp ]] && echo "Whalewis Buy-------#Recent filer---------------------------------------------";cat tmp
+if [[ -s tmp ]]; then
+  echo "Whalewis Buy------------#Recent 13F filer----------------------------------------LastQ---LastY--"
+  cat tmp |while read line
+  do
+    firm=$(echo $line |cut -d',' -f2 )
+    performance=$($mycurl "https://whalewisdom.com/filer/$firm" |egrep -A 1 -B 3 "Performance Last 4 Quarters" |egrep -o "[0-9.]+%|-[0-9.]+%" |tr '\n' ' ')
+    echo $line" "$performance|awk '{printf("%-80s %-8s%-8s\n",$1,$2,$3)}'
+  done   
+fi
 
 if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.com
   echo "Fund:-Old Date---New Date-:Share Changes------------------------"; #Ark Investment tracked by arktrack.com
