@@ -146,16 +146,9 @@ done
 [[ -s tmp ]] && echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp
 
 #Whale Wisdom
-egrep "^$1," $WHALEWISDOM |sort | uniq > tmp
-if [[ -s tmp ]]; then
-  echo "Whalewis Buy------------#Recent 13F filer----------------------------------------LastQ---LastY--"
-  cat tmp |while read line
-  do
-    firm=$(echo $line |cut -d',' -f2 )
-    performance=$($mycurl "https://whalewisdom.com/filer/$firm" |egrep -A 1 -B 3 "Performance Last 4 Quarters" |egrep -o "[0-9.]+%|-[0-9.]+%" |tr '\n' ' ')
-    echo $line" "$performance|awk '{printf("%-80s %-8s%-8s\n",$1,$2,$3)}'
-  done   
-fi
+egrep "^$1," $WHALEWISDOM |sort | uniq |sed -e 's/whalewisdom-add.csv/Add/g' -e 's/whalewisdom-new.csv/New/g'> tmp
+[[ -s tmp ]] && echo "Whales Recent 13F filer-----------------------------------------------LastQ---LastY--"; \
+cat tmp  |awk -F',' '{printf("%-10s%-60s%-8s%-8s\n",$1,$2,$3,$4)}'
 
 if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.com
   echo "Fund:-Old Date---New Date-:Share Changes------------------------"; #Ark Investment tracked by arktrack.com
