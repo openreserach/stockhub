@@ -64,8 +64,8 @@ fairvalue=`$mycurl https://finance.yahoo.com/quote/$1  |egrep -o 'Fw\(b\) Fl\(en
 [[ ! -z $fairvalue ]] && echo -e "Fair Value:\t"$fairvalue
 
 #tipranks
-tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |sort |awk '{print $2}'|sed 's/,//g' |tr '\n' ',' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
-[[ ! -z $tiprank  ]] && echo -e "TipRank:\t"$tiprank
+#tiprank=$($mycurl "https://www.tipranks.com/api/stocks/getNewsSentiments/?ticker="$1 |jq '.counts[0]'|egrep "buy|neutral|sell" |sort |awk '{print $2}'|sed 's/,//g' |tr '\n' ',' |awk -F',' '{printf "buy:%d neutral:%d sell:%d\n",$1,$2,$3}') 
+#[[ ! -z $tiprank  ]] && echo -e "TipRank:\t"$tiprank
 
 #MotleyFool's rating. 
 export motelyfool=$($mycurl https://caps.fool.com/Ticker/$1.aspx |egrep "capsStarRating" |head -n 1 |egrep -o "[0-9] out of 5")
@@ -129,6 +129,17 @@ cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.creat
 cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
 |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
 [[ -s tmp ]] && echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp
+
+#tipranks
+echo "Expert Name-------Rating-Return%-YYYY-MM-DD-----URL---------------------------Title------------------"
+$mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" > tmp
+JSON=$(cat tmp| jq ".experts[]")
+echo $JSON |jq '.|select (.ratings[].date>="'$(date -d "-30 days" "+%Y-%m-%d")'") |.ratings[0].url,.name,.rankings[0].stars,.rankings[0].avgReturn,.ratings[0].timestamp,.ratings[0].quote.title'|sed 's/"//g' |tr '\n' ',' |sed 's/http/\nhttp/g' |egrep -v '^$' |while read line
+do
+   url=$(echo $line |cut -d',' -f1)   
+   tinyurl=$($mycurl -s "http://tinyurl.com/api-create.php?url=$url")
+   echo $tinyurl,$line | awk -F',' '{printf("%-20s%-5s%-8s%-15s%-30s%s\n",$3,$4,$5*100,substr($6,0,11),$1,$7)}'
+done
 
 #fool recent picks 
 egrep "^$1,"  $FOOL |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20s%-9s\n",$5,$3,$4}' > tmp
