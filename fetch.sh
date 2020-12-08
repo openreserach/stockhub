@@ -62,7 +62,6 @@ do
   done
 done
 
-
 >ark.csv; echo "."
 $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv"                       |egrep ARKK |cut -d',' -f2,4 |egrep -v "ARKK,$" >> ark.csv
 $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/ARK_NEXT_GENERATION_INTERNET_ETF_ARKW_HOLDINGS.csv"         |egrep ARKW |cut -d',' -f2,4 |egrep -v "ARKW,$" >> ark.csv
@@ -71,3 +70,5 @@ $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/ARK_FINTECH_INN
 $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/ARK_GENOMIC_REVOLUTION_MULTISECTOR_ETF_ARKG_HOLDINGS.csv"   |egrep ARKG |cut -d',' -f2,4 |egrep -v "ARKG,$" >> ark.csv
 $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/THE_3D_PRINTING_ETF_PRNT_HOLDINGS.csv"                      |egrep PRNT |cut -d',' -f2,4 |egrep -v "PRNT,$" >> ark.csv
 $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/ARK_ISRAEL_INNOVATIVE_TECHNOLOGY_ETF_IZRL_HOLDINGS.csv"     |egrep IZRL |cut -d',' -f2,4 |egrep -v "IZRL,$" >> ark.csv
+
+[[  $(find . -name "*.csv" -type f -size 0) == 0 ]] && echo "Incomplete" || echo "Complete"
