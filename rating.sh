@@ -134,17 +134,19 @@ cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.creat
 |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
 [[ -s tmp ]] && echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp
 
-$mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq '.experts[]|select (.ratings[].date>="'$(date -d "-30 days" "+%Y-%m-%d")'") |.ratings[0].url,.name,.rankings[0].stars,.rankings[0].avgReturn,.ratings[0].timestamp,.ratings[0].quote.title'|sed 's/"//g' |tr '\n' ',' |sed 's/http/\nhttp/g' |egrep -v '^$' > tmp
+$mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq '.experts[]|select (.ratings[].date>="'$(date -d "-30 days" "+%Y-%m-%d")'") |.ratings[0].url,.name,.rankings[0].stars,.rankings[0].avgReturn,.ratings[0].timestamp,.ratings[0].quote.title'|sed 's/"//g' |tr '\n' ';' |sed 's/http/\nhttp/g' |egrep -v '^$' > tmp
 [[ -s tmp ]] && echo "Expert Name--------------Rating-Return%-YYYY-MM-DD-----URL---------------------------Title------------------"; cat tmp |while read line
 do              #Tipranks Expert's Rating(0-5), Return%(per rating), tiny-url-to-access-article, Title/Abstract
-   url=$(echo $line |cut -d',' -f1)   
+   url=$(echo $line |cut -d';' -f1)
    tinyurl=$($mycurl -s "http://tinyurl.com/api-create.php?url=$url")
-   echo $tinyurl,$line | awk -F',' '{printf("%-27s%-5s%-8s%-15s%-30s%s\n",substr($3,0,25),$4,$5*100,substr($6,0,11),$1,$7)}'
+   echo $tinyurl";"$line | awk -F';' '{printf("%-27s%-5s%-8s%-15s%-30s%s\n",substr($3,0,25),$4,$5*100,substr($6,0,11),$1,$7)}'
 done
 
-#fool recent picks 
-egrep "^$1,"  $FOOL |grep -v '.aspx' |awk -F',' '{printf "%-16s%-20s%-9s\n",$5,$3,$4}' > tmp
-[[ -s tmp ]] && echo "Fool Pick Date--Player--------------Rating---------------------------------"; cat tmp
+#fool.com players' picks 
+echo "Fool Player-------------------Rating--MM/DD/YYYY--Time--StartPrice------------------"
+$mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 27 "player/\w+" |egrep -A 2 "\w+.asp|numeric|date" |egrep -v '<td|td>|<a|a>|^\s+$|--' \
+|sed 's/[[:space:]]//g'|tr '\n' ',' |sed -E -e 's/-[0-9]+\.[0-9]+%,/\n/g' -e 's/\+[0-9]+\.[0-9]+%,/\n/g' -e 's/&lt;/</g' |egrep -v "<del" |head -n 5   \
+|awk -F',' '{printf("%-30s%-8s%-12s%-6s%-8s\n",$1,$2,$3,$4,$5)}' 
 
 >tmp #Marketwatch games
 egrep "^$1,"  $GAMES |while read line
