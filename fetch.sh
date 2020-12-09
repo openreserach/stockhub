@@ -71,4 +71,4 @@ $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/ARK_GENOMIC_REV
 $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/THE_3D_PRINTING_ETF_PRNT_HOLDINGS.csv"                      |egrep PRNT |cut -d',' -f2,4 |egrep -v "PRNT,$" >> ark.csv
 $mycurl "https://ark-funds.com/wp-content/fundsiteliterature/csv/ARK_ISRAEL_INNOVATIVE_TECHNOLOGY_ETF_IZRL_HOLDINGS.csv"     |egrep IZRL |cut -d',' -f2,4 |egrep -v "IZRL,$" >> ark.csv
 
-[[  $(find . -name "*.csv" -type f -size 0) == 0 ]] && echo "Incomplete" || echo "Complete"
+[[  $(find . -name "*.csv" -type f -size 0) == 0 ]] && echo "Incomplete" || echo "Complete" 
