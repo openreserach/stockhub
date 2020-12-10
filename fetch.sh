@@ -4,9 +4,11 @@ mycurl="curl -s --max-time 3 -L -k --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv
 
 rm -f *.csv tmp*
 echo "Market Overview=============="
-export sp500avgpe=$($mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev)
-echo -e "S&P500 PE:\t"$sp500avgpe
-echo -e "FearGreed:\t"$($mycurl "https://money.cnn.com/data/fear-and-greed/" |egrep  -o 'Fear.+Greed Now: [0-9]+ [(A-Za-z )]+' |cut -d":" -f2 |sed "s/^ //g")
+echo -e "S&P500 PE:\t"$($mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev)
+echo -e "FearGreed:\t"$($mycurl "https://money.cnn.com/data/fear-and-greed/" |egrep  -o 'Fear.+Greed Now: [0-9]+ [(A-Za-z )]+' |cut -d':' -f2 |sed 's/^ //g')
+$mycurl "https://markets.cboe.com/us/options/market_statistics/daily/" |egrep -A 1 '>INDEX PUT/CALL RATIO<|>EQUITY PUT/CALL RATIO<' |egrep -o '>[0-9].[0-9]+<' |sed -e 's/>//g' -e 's/<//g' > tmp
+echo -e 'Index  Put/Call Ratio:\t'$(head -n 1 tmp)
+echo -e 'Equity Put/Call Ratio:\t'$(tail -n 1 tmp) 
 export YALE_CRASH_INDEX="https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly"
 echo -e "CrashIndex:\t"$($mycurl $YALE_CRASH_INDEX |jq ".dataset_data.data[0]"  |tail -n +3 |head -n 1|sed -e 's/ //g' -e 's/,//g')
 

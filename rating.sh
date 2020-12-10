@@ -19,10 +19,10 @@ echo "FA color-coded=============================="
 for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/B' 'PEG' 'P/FCF' 'Quick Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'Target Price' 'Recom' 'Beta' 'Inst Own' 'Dividend %' 'Earnings' 
 do
 	color=$(cat tmp |grep ">$key<" |egrep -o "is-red|is-green")
-	val=$(cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%" |tail -n 1 |sed -e 's/>//g' -e 's/<//g')
-  [[ $color == 'is-red'    ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'  | awk  '{ print "\033[31m"$0"\033[0m";}'
-  [[ $color == 'is-green'  ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'  | awk  '{ print "\033[32m"$0"\033[0m";}'
-  [[ -z $color  ]]            && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'
+	val=$(cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%|>-<" |tail -n 1 |sed -e 's/>//g' -e 's/<//g' -e 's/-//g')
+  [[ $color == 'is-red'   && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'  | awk  '{ print "\033[31m"$0"\033[0m";}'
+  [[ $color == 'is-green' && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'  | awk  '{ print "\033[32m"$0"\033[0m";}'
+  [[ -z $color            && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'
 done
 $mycurl "https://finance.yahoo.com/quote/$1/key-statistics?p=$1"|sed 's/td/\n/g'|egrep data-reactid |egrep -A 1 "Enterprise Value/EBITDA" |tail -n 1 |egrep -o '>[0-9]+.[0-9]+<' |sed -e 's/>//g' -e 's/<//g' |awk '{printf("EV/EBITDA      %3.2f\n",$1)}'
 etf=$($mycurl "https://etfdb.com/stock/$1/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%"|cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')
