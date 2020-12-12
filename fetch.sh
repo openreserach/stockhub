@@ -2,17 +2,19 @@
 
 mycurl="curl -s --max-time 3 -L -k --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
 
-rm -f *.csv tmp*
 echo "Market Overview=============="
-echo -e "S&P500 PE:\t"$($mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev)
-echo -e "FearGreed:\t"$($mycurl "https://money.cnn.com/data/fear-and-greed/" |egrep  -o 'Fear.+Greed Now: [0-9]+ [(A-Za-z )]+' |cut -d':' -f2 |sed 's/^ //g')
+echo -e "S&P500 PE Average:\t\t"$($mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev)
+echo -e "FearGreed (0-100):\t\t"$($mycurl "https://money.cnn.com/data/fear-and-greed/" |egrep -o "Fear.+Greed Now: [0-9]+ [(A-Za-z ]+" |cut -d":" -f2 |sed "s/^ //g")")"
 $mycurl "https://markets.cboe.com/us/options/market_statistics/daily/" |egrep -A 1 '>INDEX PUT/CALL RATIO<|>EQUITY PUT/CALL RATIO<' |egrep -o '>[0-9].[0-9]+<' |sed -e 's/>//g' -e 's/<//g' > tmp
-echo -e 'Index  Put/Call Ratio:\t'$(head -n 1 tmp)
-echo -e 'Equity Put/Call Ratio:\t'$(tail -n 1 tmp) 
-export YALE_CRASH_INDEX="https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly"
-echo -e "CrashIndex:\t"$($mycurl $YALE_CRASH_INDEX |jq ".dataset_data.data[0]"  |tail -n +3 |head -n 1|sed -e 's/ //g' -e 's/,//g')
+echo -e "Index  Put/Call Ratio:\t"$(head -n 1 tmp)
+echo -e "Equity Put/Call Ratio:\t"$(tail -n 1 tmp) 
+echo -e "Personal Saving Rate:\t"$($mycurl "https://fred.stlouisfed.org/series/PSAVERT" |egrep '20[0-9]+: <span class="series-meta-observation-value' |sed -e 's/: <span class="series-meta-observation-value">/ /g' |cut -d'<' -f1|sed 's/^[[:space:]]*//g')"%"   
+echo -e "Crash Index:\t\t\t"$($mycurl https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly |jq ".dataset_data.data[0]"  |tail -n +3 |head -n 1|sed -e 's/ //g' -e 's/,//g')
+#TODO:VIX, ...
 
-#MotleyFool players' recent trading 
+
+rm -f *.csv tmp*
+#MotleyFool players recent trading 
 >foolrecentpick.csv
 seq 0 49 |while read pagenum 
 do #Fool's player's recent (in the most recent 50 pages) picks

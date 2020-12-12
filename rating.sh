@@ -140,10 +140,10 @@ do              #Tipranks Expert's Rating(0-5), Return%(per rating), tiny-url-to
 done
 
 #fool.com players' picks 
-echo "Fool Player-------------------Rating--MM/DD/YYYY--Time--StartPrice------------------"
+echo "Fool Player-------------------Rating--MM/DD/YYYY--Time--StartPrice--URL-----------------"
 $mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 27 "player/\w+" |egrep -A 2 "\w+.asp|numeric|date" |egrep -v '<td|td>|<a|a>|^\s+$|--' \
 |sed 's/[[:space:]]//g'|tr '\n' ',' |sed -E -e 's/-[0-9]+\.[0-9]+%,/\n/g' -e 's/\+[0-9]+\.[0-9]+%,/\n/g' -e 's/&lt;/</g' |egrep -v "<del" |head -n 5   \
-|awk -F',' '{printf("%-30s%-8s%-12s%-6s%-8s\n",$1,$2,$3,$4,$5)}' 
+|awk -F',' '{printf("%-30s%-8s%-12s%-6s%-12shttps://caps.fool.com/player/%s.aspx\n",$1,$2,$3,$4,$5,$1)}' 
 
 >tmp #Marketwatch games
 egrep "^$1,"  $GAMES |while read line
@@ -162,13 +162,14 @@ egrep "^$1," $WHALEWISDOM |sort | uniq |sed -e 's/whalewisdom-add.csv/Add/g' -e 
 [[ -s tmp ]] && echo "Whales Recent 13F filer-----------------------------------------------LastQ---LastY--"; \
 cat tmp  |awk -F',' '{printf("%-10s%-60s%-8s%-8s\n",$1,$2,$3,$4)}'
 
-if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.com
-  echo "Fund:-Old Date---New Date-:Share Changes------------------------"; #Ark Investment tracked by arktrack.com
-  $mycurl 'https://www.arktrack.com/ARKW.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKW:"$1"-"$3":"$4-$2}'
-  $mycurl 'https://www.arktrack.com/ARKK.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKK:"$1"-"$3":"$4-$2}'
-  $mycurl 'https://www.arktrack.com/ARKQ.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKQ:"$1"-"$3":"$4-$2}'
-  $mycurl 'https://www.arktrack.com/ARKG.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKG:"$1"-"$3":"$4-$2}'
-  $mycurl 'https://www.arktrack.com/ARKF.json' | jq  '.[] | select(.ticker == "'$1'") |.date,.shares' |tail -4  |tr '\n' ',' |sed 's/"//g' |awk -F',' '{print "ARKF:"$1"-"$3":"$4-$2}'
+if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.com  
+  echo "ARK :Buy(+)/Sell(-)/Hold(0) in last 30 trading days----------------------------------"
+  for ark in ARKW ARKK ARKQ ARKG ARKF
+  do #show 30 days add(+)/sell(-)/hold(0) position for last 30 trading days from left to right
+    trend=$($mycurl 'https://www.arktrack.com/'$ark'.json' | jq -r '.[] | select(.ticker == "'$1'") |.shares' |tail -n 30 |tr '\n' ' ' \
+      |awk '{for (i = 1; i < NF; i++){x=$(i+1)-$i; if (x>0) printf "+";if (x<0) printf "-";if (x == 0) printf "0";}; }') #'
+    [[ ! -z $trend ]] && echo "$ark:"$trend
+  done
 fi
 
 #SeekingAlpha Long ideas
