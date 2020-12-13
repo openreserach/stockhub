@@ -16,7 +16,7 @@ price=$(cat tmp |egrep "Current stock price" |egrep -o '>[0-9.]+<' |cut -d'>' -f
 updown=$(cat tmp |egrep "Change</td>" |egrep -o '>[0-9.]+%<|>\-[0-9.]+%<' |cut -d'>' -f2 |cut -d'<' -f1)
 echo "$"$price $updown `date +%x`
 echo "FA color-coded=============================="
-for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/B' 'PEG' 'P/FCF' 'Quick Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'Target Price' 'Recom' 'Beta' 'Inst Own' 'Dividend %' 'Earnings' 
+for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/B' 'PEG' 'P/FCF' 'Quick Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'Target Price' 'Recom' 'Beta' 'Insider Own' 'Insider Trans' 'Inst Own' 'Inst Trans' 'Dividend %' 'Earnings' 'Rel Volume'
 do
 	color=$(cat tmp |grep ">$key<" |egrep -o "is-red|is-green")
 	val=$(cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%|>-<" |tail -n 1 |sed -e 's/>//g' -e 's/<//g' -e 's/-//g')
@@ -24,19 +24,24 @@ do
   [[ $color == 'is-green' && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'  | awk  '{ print "\033[32m"$0"\033[0m";}'
   [[ -z $color            && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'
 done
-$mycurl "https://finance.yahoo.com/quote/$1/key-statistics?p=$1"|sed 's/td/\n/g'|egrep data-reactid |egrep -A 1 "Enterprise Value/EBITDA" |tail -n 1 |egrep -o '>[0-9]+.[0-9]+<' |sed -e 's/>//g' -e 's/<//g' |awk '{printf("EV/EBITDA      %3.2f\n",$1)}'
-etf=$($mycurl "https://etfdb.com/stock/$1/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%"|cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')
-[[ ! -z $etf ]] && echo $etf | awk '{printf("ETF/Weight     %-s/%2.2f%%\n",$1,$2)}' 
-
+etf=$($mycurl "https://etfdb.com/stock/$1/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%"\
+      |cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')
+[[ ! -z $etf ]] && echo $etf |awk '{printf("ETF/Weight     %-s/%2.2f%%\n",$1,$2)}' 
+evebitda=$($mycurl "https://finance.yahoo.com/quote/$1/key-statistics?p=$1"|sed 's/td/\n/g'|egrep data-reactid |egrep -A 1 "Enterprise Value/EBITDA" |tail -n 1 \
+          |egrep -o '>[0-9]+.[0-9]+<' |sed -e 's/>//g' -e 's/<//g')
+[[ ! -z $evebitda ]] && echo $evebitda |awk '{printf("EV/EBITDA      %3.2f\n",$1)}'
+dcf=$($mycurl "https://www.gurufocus.com/dcf/$1" |egrep "var data = \[" |egrep -o "y:[-0-9.]+[^{]+/term/\w+/" |cut -d':' -f2,4 |sed "s/,color:'\/term//g" |cut -d'/' -f2,1 \
+      |egrep iv_dc |sort -nr |sed -e 's/iv_dcf_share/(Projectd-FCF-based)/g' -e 's/\/iv_dcf/(FCF-based)/g' -e 's/\/iv_dcEarning/(Earning-based)/g' |head -n 1) #'
+[[ ! -z $dcf ]] && echo $dcf |awk '{printf("Max DCF        %s\n",$1)}'
 $mycurl https://finviz.com/insidertrading.ashx |sed 's/tr/\n/g' |egrep -w "t=$1" |egrep -o ">Buy<|>Sale<|>Option Exercise<" |sed -e 's/>//g' -e 's/<//g' |while read buysell
 do
   echo -e "Insider:\t\t$buysell"
 done
-$mycurl https://finviz.com |egrep -w -A 5 $1 |egrep -B 5 -o "Stocks with .+"  |cut -d']' -f1
-echo "News=================================="
+
+echo "News=========================================="
 cat tmp |egrep "white-space:nowrap" |head -n 3 |egrep -o 'white-space:nowrap">\S+.+tab-link-news">.+</a>' |cut -d'>' -f2,7  |cut -c1-10,35- |cut -d'<' -f1
 
-echo "Rating================================"
+echo "Rating========================================"
 #gurufocus Financial Strength & Profitability Strength
 export FinancialStrength=$($mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $FinancialStrength ]] && echo -e "Strength:\t"$FinancialStrength
@@ -77,7 +82,7 @@ curl -s "https://x-uni.com/api/screener-iv.php?params=30;;10000;;;;20;;;;;;;;;;;
 curl -s 'https://x-uni.com/api/screener-gd.php?params=0.5;5;10;3;20;10' |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tGraham-Dodd Stock/g"
 curl -s 'https://x-uni.com/api/screener-gf.php?params=2;;4.6' |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tGraham Formula Stock/g"
 
-echo "TA & Trend ==================================="
+echo "TA & Trend =================================="
 $mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb="$1"&cobrand=&mode=stock" > tmp
 trendspotter=`cat tmp |grep -i 'class="analysisTd' |grep -v Intermediate |egrep -o ">[A-Za-z]+ \([-0-9.]+\)" |tr '>' '|' |head -n 1 |cut -d'|' -f2`
 candlestick=`cat tmp |egrep -A 2 CandleStick |egrep -o 'Recent CandleStick Analysis.+>[A-Za-z ]+|>Candle<.+borderTd">[A-Za-z ]+' |rev |cut -d'>' -f1 |rev |tr '\n' ' '`
@@ -175,8 +180,15 @@ fi
 #SeekingAlpha Long ideas
 $mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
 
-#Gurufocus Latest Buy
-egrep -w $1 $GURUFOCUS |while read guru; do echo "GuruFocus Latest:"$guru; done
+#Gurufocus Latest Buy  #TODO: https://www.gurufocus.com/stock/<ticker>/guru-trades
+curl -s "https://www.dataroma.com/m/activity.php?sym=$1&typ=a"  |cat -n > tmp 
+last=$(cat tmp |egrep -o '<b>Q[0-9]</b> &nbsp<b>[0-9]+' |head -n 1 |sed -e 's/<b>//g' -e 's/<\/b> &nbsp/ /g')
+head=$(cat tmp |egrep -m 2 '<b>Q[0-9]</b> &nbsp<b>[0-9]+'  |head -n 1 |awk '{print $1}')
+tail=$(cat tmp |egrep -m 2 '<b>Q[0-9]</b> &nbsp<b>[0-9]+'  |tail -n 1 |awk '{print $1}')
+[[ ! -z $head && ! -z $tail ]] && echo "QQ-YYYY-Fund----------------------------------------------Action---"; cat tmp |sed -n "${head},${tail}p" |egrep -o "\"firm\".+|class=\"buy.+|class=\"sell.+"  |sed 's/><//g' |cut -d'>' -f2 |tr -d '\n' |sed -e 's/[0-9]<\/td/\n/g' -e 's/<\/a\/td/,/g' -e 's/<\/td/,/g' |cut -d',' -f1,2 |while read buysell
+do
+ echo $last","$buysell|awk -F',' '{printf("%-8s%-50s%-15s\n",$1,$2,$3)}'
+done
 
 #Barron's Picks & Pans
 $mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron; do echo "Barron's Picks:"$barron; done
