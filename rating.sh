@@ -17,7 +17,7 @@ cat tmp|grep center |grep fullview-links |grep tab-link |cut -d'>' -f4,6,8 |sed 
 price=$(cat tmp |egrep "Current stock price" |egrep -o '>[0-9.]+<' |cut -d'>' -f2 |cut -d'<' -f1)
 updown=$(cat tmp |egrep "Change</td>" |egrep -o '>[0-9.]+%<|>\-[0-9.]+%<' |cut -d'>' -f2 |cut -d'<' -f1)
 echo "$"$price $updown `date +%x`
-echo "FA color-coded=============================="
+echo "FA(color-coded)-----------------------------"
 for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/B' 'PEG' 'P/FCF' 'Quick Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'Target Price' 'Recom' 'Beta' 'Insider Own' 'Insider Trans' 'Inst Own' 'Inst Trans' 'Dividend %' 'Earnings' 'Rel Volume'
 do
 	color=$(cat tmp |grep ">$key<" |egrep -o "is-red|is-green")
@@ -40,38 +40,34 @@ do
   echo -e "Insider:\t\t$buysell"
 done
 
-echo "News=========================================="
-cat tmp |egrep "white-space:nowrap" |head -n 3 |egrep -o 'white-space:nowrap">\S+.+tab-link-news">.+</a>' |cut -d'>' -f2,7  |cut -c1-10,35- |cut -d'<' -f1
+echo "News------------------------------------------" #news in last 24-48 hours
+cat tmp |egrep -B 25 "$(date --date '2 days ago' +'%b-%d-%y')" |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
 
-echo "Rating========================================"
-#gurufocus Financial Strength & Profitability Strength
-export FinancialStrength=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+echo "Rating----------------------------------------"
+FinancialStrength=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $FinancialStrength ]] && echo -e "Strength:\t"$FinancialStrength
-export Profitability=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Profitability Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+Profitability=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Profitability Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $Profitability ]] && echo -e "ProfitRank:\t"$Profitability
-export Valuation=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Valuation Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+Valuation=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Valuation Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $Valuation ]] && echo -e "Valuation:\t"$Valuation
 
 #Crammer's MadMoney comments
-export dateratingprice=$(mycurl -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+|\$[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',')
+dateratingprice=$(mycurl -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+|\$[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',')
 [[ ! -z $dateratingprice ]] && echo -e "Crammer:\t"$dateratingprice |sed -e 's/,1,/,Sell,/g' -e 's/,2,/,Negative,/g' -e 's/,3,/,Neural,/g' -e 's/,4,/,Postive,/g' -e 's/,5,/,Buy,/g'
 
-
-export zack=$(mycurl "https://www.zacks.com/stock/quote/$1" |egrep -m1 "rank_chip" |cut -d'<' -f1 |sed 's/ //g')
+zack=$(mycurl "https://www.zacks.com/stock/quote/$1" |egrep -m1 "rank_chip" |cut -d'<' -f1 |sed 's/ //g')
 [[ ! -z $zack ]] && echo -e "Zack Rank:\t"$zack
 #stoxline rating
-export stoxline=$(mycurl "http://m.stoxline.com/stock.php?symbol=$1" |grep -A 2 "Overall" |egrep "pics/[0-9]s.png" |egrep  -o '[0-9]s.png' |sed 's/s.png/ stars/g')
+stoxline=$(mycurl "http://m.stoxline.com/stock.php?symbol=$1" |grep -A 2 "Overall" |egrep "pics/[0-9]s.png" |egrep  -o '[0-9]s.png' |sed 's/s.png/ stars/g')
 [[ ! -z $stoxline ]] && echo -e "Stoxline:\t"$stoxline
 
-#Argus Research from Yahoo
-fairvalue=$(mycurl https://finance.yahoo.com/quote/$1  |egrep -o 'Fw\(b\) Fl\(end\)\-\-m Fz\(s\).+'|cut -c1-80 |cut -d'>' -f2 |cut -d'<' -f1)
-[[ ! -z $fairvalue ]] && echo -e "Fair Value:\t"$fairvalue
+fairvalue=$(mycurl https://finance.yahoo.com/quote/$1  |egrep -o 'Fw\(b\) Fl\(end\)\-\-m Fz\(s\).+'|cut -c1-80 |cut -d'>' -f2 |cut -d'<' -f1) #'
+[[ ! -z $fairvalue ]] && echo -e "Fair Value:\t"$fairvalue #by Argus Research from Yahoo
 
-#MotleyFool's rating. 
-export motelyfool=$(mycurl https://caps.fool.com/Ticker/$1.aspx |egrep "capsStarRating" |head -n 1 |egrep -o "[0-9] out of 5")
+motelyfool=$(mycurl https://caps.fool.com/Ticker/$1.aspx |egrep "capsStarRating" |head -n 1 |egrep -o "[0-9] out of 5")
 [[ ! -z $motelyfool ]] && echo -e "MotelyFool:\t"$motelyfool
 
-#tipranks
+#TipRanks Score, price target and ratings
 mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq ".tipranksStockScore.score,.bloggerSentiment.bullish,.portfolioHoldingData.priceTarget, \
 .portfolioHoldingData.analystConsensus.consensus,\
 .portfolioHoldingData.analystConsensus.distribution.buy, \
@@ -84,8 +80,7 @@ mycurl "https://x-uni.com/api/screener-iv.php?params=30;;10000;;;;20;;;;;;;;;;;;
 mycurl 'https://x-uni.com/api/screener-gd.php?params=0.5;5;10;3;20;10' |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tGraham-Dodd Stock/g"
 mycurl 'https://x-uni.com/api/screener-gf.php?params=2;;4.6' |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tGraham Formula Stock/g"
 
-
-echo "TA & Trend =================================="
+echo "TA & Trend ----------------------------------"
 mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb="$1"&cobrand=&mode=stock" > tmp
 trendspotter=$(cat tmp |grep -i 'class="analysisTd' |grep -v Intermediate |egrep -o '>[A-Za-z]+ \([-0-9.]+\)' |tr '>' '|' |head -n 1 |cut -d'|' -f2)  #'
 candlestick=$(cat tmp  |egrep -A 2 CandleStick |egrep -o 'Recent CandleStick Analysis.+>[A-Za-z ]+|>Candle<.+borderTd">[A-Za-z ]+' |rev |cut -d'>' -f1 |rev |tr '\n' ' ')
@@ -100,17 +95,14 @@ signal=$(mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker="$
 pattern=$(mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker="$1 |egrep "MainContent_LastPattern" |cut -d'>' -f3 |cut -d'<' -f1  |sed 's/NO PATTERN//g' |tr -d '\r\n')
 [[ ! -z $single  ]] && echo -e "USBull Signal\t"$signal
 [[ ! -z $pattern ]] && echo -e "USBull Pattern\t"$pattern
-
 pretiming=$(mycurl "https://www.pretiming.com/search?q=$1" |egrep -A 5  -m1 "Recommended Positions"  |tail -n 1 |egrep -o -i "long-bullish|long-bearish|short-bullish|short-bearish")
 [[ ! -z $pretiming ]] && echo -e "PreTiming TA:\t"$pretiming
-
 oversold=$(mycurl "https://www.tradingview.com/markets/stocks-usa/market-movers-oversold"|egrep "window.initData.screener_data" |egrep -o "NYSE:[A-Z]+|NASDAQ:[A-Z]+|AMEX:[A-Z]+"|egrep -w $1)
 [[ ! -z $oversold ]] && echo -e "TradingView:\tOversold"
-
 shortinterest=$(mycurl https://www.highshortinterest.com/all/ |egrep -o "q?s=[A-Z\.]+" |cut -d'=' -f2 |egrep -i $1)
 [[ ! -z $shortinterest ]] && echo -e "Short Interest:\tHigh"
 
-echo "Radar Screen================================="
+echo "What people say==================================================================================================="
 #Trading view
 mycurl https://www.tradingview.com/symbols/NYSE-$1 > tmp
 mycurl https://www.tradingview.com/symbols/NASDAQ-$1 >> tmp 
@@ -147,8 +139,14 @@ do              #Tipranks Expert's Rating(0-5), Return%(per rating), tiny-url-to
    echo $tinyurl";"$line | awk -F';' '{printf("%-27s%-5s%-8s%-15s%-30s%s\n",substr($3,0,25),$4,$5*100,substr($6,0,11),$1,$7)}'
 done
 
-#fool.com players' picks 
-echo "Fool Player-------------------Rating--MM/DD/YYYY--Time--StartPrice--URL-----------------"
+#SeekingAlpha Long ideas
+mycurl "https://seekingalpha.com/stock-ideas/long-ideas"|grep bull|egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+" |cut -d'/' -f3 |egrep -w "$1$"|sed "s/$1/SeekingAlpha-------------Long------/g"
+
+#Barron's Picks & Pans
+mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron; do echo "Barron's Picks--------------"$barron"------"; done
+
+echo "What people do==================================================================================================="
+echo "Fool Player-------------------Rating--MM/DD/YYYY--Time--StartPrice--URL---------------"
 mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 27 "player/\w+" |egrep -A 2 "\w+.asp|numeric|date" |egrep -v '<td|td>|<a|a>|^\s+$|--' \
 |sed 's/[[:space:]]//g'|tr '\n' ',' |sed -E -e 's/-[0-9]+\.[0-9]+%,/\n/g' -e 's/\+[0-9]+\.[0-9]+%,/\n/g' -e 's/&lt;/</g' |egrep -v "<del" |head -n 5   \
 |awk -F',' '{printf("%-30s%-8s%-12s%-6s%-12shttps://caps.fool.com/player/%s.aspx\n",$1,$2,$3,$4,$5,$1)}' 
@@ -167,7 +165,7 @@ done
 
 #Whale Wisdom
 egrep "^$1," $WHALEWISDOM |sort | uniq |sed -e 's/whalewisdom-add.csv/Add/g' -e 's/whalewisdom-new.csv/New/g'> tmp
-[[ -s tmp ]] && echo "Whales Recent 13F filer-----------------------------------------------LastQ---LastY--"; \
+[[ -s tmp ]] && echo "Whales Recent 13F filer-----------------------------------------------LastQ---LastY---"; \
 cat tmp  |awk -F',' '{printf("%-10s%-60s%-8s%-8s\n",$1,$2,$3,$4)}'
 
 if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.com  
@@ -180,22 +178,16 @@ if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.c
   done
 fi
 
-#SeekingAlpha Long ideas
-mycurl "https://seekingalpha.com/stock-ideas/long-ideas"  |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+"  |cut -d'/' -f3 |egrep -w "$1$" | sed "s/$1/SeekingAlpha\tLong/g"
-
 #Gurufocus Latest Buy  #TODO: https://www.gurufocus.com/stock/<ticker>/guru-trades
 mycurl "https://www.dataroma.com/m/activity.php?sym=$1&typ=a"  |cat -n > tmp 
 last=$(cat tmp |egrep -o   '<b>Q[0-9]</b> &nbsp<b>[0-9]+' |head -n 1 |sed -e 's/<b>//g' -e 's/<\/b> &nbsp/ /g')
 head=$(cat tmp |egrep -m 2 '<b>Q[0-9]</b> &nbsp<b>[0-9]+' |head -n 1 |awk '{print $1}')
 tail=$(cat tmp |egrep -m 2 '<b>Q[0-9]</b> &nbsp<b>[0-9]+' |tail -n 1 |awk '{print $1}')
 if [[ ! -z $last && ! -z $head && ! -z $tail ]]; then 
-  echo "QQ-YYYY-Fund----------------------------------------------Action---"; 
+  echo "QQ-YYYY-Fund-------------------------------------------------------------Action-------"; 
   [[ $tail == $head ]] && tail=1000 
   cat tmp |sed -n "${head},${tail}p" |egrep -o "\"firm\".+|class=\"buy.+|class=\"sell.+"  |sed 's/><//g' |cut -d'>' -f2 |tr -d '\n' |sed -e 's/[0-9]<\/td/\n/g' -e 's/<\/a\/td/,/g' -e 's/<\/td/,/g' |cut -d',' -f1,2 |while read buysell
   do
-    echo $last","$buysell|awk -F',' '{printf("%-8s%-50s%-15s\n",$1,$2,$3)}'
+    echo $last","$buysell|awk -F',' '{printf("%-8s%-65s%-15s\n",$1,$2,$3)}'
   done
 fi
-
-#Barron's Picks & Pans
-mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron; do echo "Barron's Picks:"$barron; done
