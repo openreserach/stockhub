@@ -17,33 +17,39 @@ cat tmp|grep center |grep fullview-links |grep tab-link |cut -d'>' -f4,6,8 |sed 
 price=$(cat tmp |egrep "Current stock price" |egrep -o '>[0-9.]+<' |cut -d'>' -f2 |cut -d'<' -f1)
 updown=$(cat tmp |egrep "Change</td>" |egrep -o '>[0-9.]+%<|>\-[0-9.]+%<' |cut -d'>' -f2 |cut -d'<' -f1)
 echo "$"$price $updown `date +%x`
-echo "FA(color-coded)-----------------------------"
+echo "Fundamentals-------------------------------"
 for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'P/B' 'PEG' 'P/FCF' 'Quick Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'Target Price' 'Recom' 'Beta' 'Insider Own' 'Insider Trans' 'Inst Own' 'Inst Trans' 'Dividend %' 'Earnings' 'Rel Volume'
 do
 	color=$(cat tmp |grep ">$key<" |egrep -o "is-red|is-green")
 	val=$(cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%|>-<" |tail -n 1 |sed -e 's/>//g' -e 's/<//g' -e 's/-//g')
-  [[ $color == 'is-red'   && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'  | awk  '{ print "\033[31m"$0"\033[0m";}'
-  [[ $color == 'is-green' && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'  | awk  '{ print "\033[32m"$0"\033[0m";}'
-  [[ -z $color            && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s%-10s\n"),$1,$2}'
+  [[ $color == 'is-red'   && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'  | awk  '{ print "\033[31m"$0"\033[0m";}'
+  [[ $color == 'is-green' && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'  | awk  '{ print "\033[32m"$0"\033[0m";}'
+  [[ -z $color            && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'
 done
-etf=$(mycurl "https://etfdb.com/stock/$1/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%"\
-      |cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')
-[[ ! -z $etf ]] && echo $etf |awk '{printf("ETF/Weight     %-s/%2.2f%%\n",$1,$2)}' 
-evebitda=$(mycurl "https://finance.yahoo.com/quote/$1/key-statistics?p=$1"|sed 's/td/\n/g'|egrep data-reactid |egrep -A 1 "Enterprise Value/EBITDA" |tail -n 1 \
-          |egrep -o '>[0-9]+.[0-9]+<' |sed -e 's/>//g' -e 's/<//g')
-[[ ! -z $evebitda ]] && echo $evebitda |awk '{printf("EV/EBITDA      %3.2f\n",$1)}'
-dcf=$(mycurl "https://www.gurufocus.com/dcf/$1" |egrep "var data = \[" |egrep -o "y:[-0-9.]+[^{]+/term/\w+/" |cut -d':' -f2,4 |sed "s/,color:'\/term//g" |cut -d'/' -f2,1 \
-      |egrep iv_dc |sort -nr |sed -e 's/iv_dcf_share/(Projectd-FCF-based)/g' -e 's/\/iv_dcf/(FCF-based)/g' -e 's/\/iv_dcEarning/(Earning-based)/g' |head -n 1) #'
-[[ ! -z $dcf ]] && echo $dcf |awk '{printf("Max DCF        %s\n",$1)}'
 mycurl https://finviz.com/insidertrading.ashx |sed 's/tr/\n/g' |egrep -w "t=$1" |egrep -o ">Buy<|>Sale<|>Option Exercise<" |sed -e 's/>//g' -e 's/<//g' |while read buysell
 do
   echo -e "Insider:\t\t$buysell"
 done
+etf=$(mycurl "https://etfdb.com/stock/$1/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%"\
+      |cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')
+[[ ! -z $etf ]] && echo $etf |awk '{printf("ETF/Weight\t\t%-s/%2.2f%%\n",$1,$2)}' 
 
-echo "News------------------------------------------" #recent news to show "heat index"
+echo "Valuations----------------------------------"
+dcf=$(mycurl "https://www.gurufocus.com/dcf/$1" |egrep "var data = \[" |egrep -o "y:[-0-9.]+[^{]+/term/\w+/" |cut -d':' -f2,4 |sed "s/,color:'\/term//g" |cut -d'/' -f2,1 \
+      |egrep iv_dc |sort -nr |sed -e 's/iv_dcf_share/(Projectd-FCF-based)/g' -e 's/\/iv_dcf/(FCF-based)/g' -e 's/\/iv_dcEarning/(Earning-based)/g' |head -n 1) #'
+[[ ! -z $dcf ]] && echo $dcf |awk '{printf("Max DCF:\t\t%s\n",$1)}'
+keystat=$(mycurl https://finance.yahoo.com/quote/$1/key-statistics)
+evebitda=$(echo $keystat|sed -e 's/<tr/\n/g' -e 's/<\/tr/\n/g' |egrep -A 1 "Enterprise Value/EBITDA"  |egrep -o  'data-reactid="[0-9]+\">[-0-9.k]+</td' |head -n 1 |cut -d'>' -f2 |cut -d'<' -f1)
+[[ ! -z $evebitda ]] && echo $evebitda |awk '{printf("EV/EBITDA:\t\t%3.2f\n",$1)}'
+##ref:https://www.fool.com/investing/2019/09/25/introducing-the-rule-of-40-and-why-investors-shoul.aspx
+profitmargin=$(echo $keystat |sed 's/<tr/\n/g'| egrep  ">Profit Margin<"  |egrep -o ">[-.0-9]+%<" |sed -e 's/>//g' -e 's/<//g')
+revenuegrowth=$(echo $keystat |sed 's/<tr/\n/g'| egrep  ">Quarterly Revenue Growth" |egrep -o ">[-.0-9]+%<" |sed -e 's/>//g' -e 's/<//g')
+[[ ! -z $profitmargin && ! -z $revenuegrowth ]] && echo $profitmargin $revenuegrowth |awk '{printf("Rule-of-40%%:\t%3.2f%%\n",$1+$2)}' 
+
+echo "News-----------------------------------------" #recent (~1-2 days) news to show "heat index"
 cat tmp |egrep -B 20 $(cat tmp| egrep "news-link" |egrep -m 2 -o ">[A-Z][a-z][a-z]-[0-9][0-9]-[0-9][0-9] " |tail -n 1) |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
 
-echo "Rating----------------------------------------"
+echo "Ratings----------------------------------------"
 FinancialStrength=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $FinancialStrength ]] && echo -e "Strength:\t"$FinancialStrength
 Profitability=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Profitability Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
@@ -51,13 +57,12 @@ Profitability=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'P
 Valuation=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Valuation Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $Valuation ]] && echo -e "Valuation:\t"$Valuation
 
-#Crammer's MadMoney comments
-dateratingprice=$(mycurl -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+|\$[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',')
+dateratingprice=$(mycurl -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+|\$[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',') #Crammer's MadMoney comments
 [[ ! -z $dateratingprice ]] && echo -e "Crammer:\t"$dateratingprice |sed -e 's/,1,/,Sell,/g' -e 's/,2,/,Negative,/g' -e 's/,3,/,Neural,/g' -e 's/,4,/,Postive,/g' -e 's/,5,/,Buy,/g'
 
 zack=$(mycurl "https://www.zacks.com/stock/quote/$1" |egrep -m1 "rank_chip" |cut -d'<' -f1 |sed 's/ //g')
 [[ ! -z $zack ]] && echo -e "Zack Rank:\t"$zack
-#stoxline rating
+
 stoxline=$(mycurl "http://m.stoxline.com/stock.php?symbol=$1" |grep -A 2 "Overall" |egrep "pics/[0-9]s.png" |egrep  -o '[0-9]s.png' |sed 's/s.png/ stars/g')
 [[ ! -z $stoxline ]] && echo -e "Stoxline:\t"$stoxline
 
@@ -75,12 +80,7 @@ mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq ".tipranksStoc
 .portfolioHoldingData.analystConsensus.distribution.sell" |tr '\n' ','|sed 's/"//g' |\
 awk -F',' '{printf("TR Score:   %d Bullish:%d%% Sentiment:%s\nPriceTarget:$%4.2f|Buy|Hold|Sell:%d|%d|%d\n"),$1,$2,$4,$3,$5,$6,$7}'
 
-#Value Stock screening
-mycurl "https://x-uni.com/api/screener-iv.php?params=30;;10000;;;;20;;;;;;;;;;;;;;;;;;;" |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tIntrinsic Value/g"
-mycurl 'https://x-uni.com/api/screener-gd.php?params=0.5;5;10;3;20;10' |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tGraham-Dodd Stock/g"
-mycurl 'https://x-uni.com/api/screener-gf.php?params=2;;4.6' |egrep -o "\"$1;" |sed "s/\"$1;/ValueScreen:\tGraham Formula Stock/g"
-
-echo "TA & Trend ----------------------------------"
+echo "Techincal & Trend ----------------------------------"
 mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb="$1"&cobrand=&mode=stock" > tmp
 trendspotter=$(cat tmp |grep -i 'class="analysisTd' |grep -v Intermediate |egrep -o '>[A-Za-z]+ \([-0-9.]+\)' |tr '>' '|' |head -n 1 |cut -d'|' -f2)  #'
 candlestick=$(cat tmp  |egrep -A 2 CandleStick |egrep -o 'Recent CandleStick Analysis.+>[A-Za-z ]+|>Candle<.+borderTd">[A-Za-z ]+' |rev |cut -d'>' -f1 |rev |tr '\n' ' ')
@@ -90,7 +90,7 @@ candlestick=$(cat tmp  |egrep -A 2 CandleStick |egrep -o 'Recent CandleStick Ana
 barchart=$(mycurl "https://www.barchart.com/stocks/quotes/$1/"  |egrep -o 'buy-color">[A-Za-z ]+</a>' |cut -d'>' -f2 |cut -d'<' -f1 |sed 's/^ \+//g')
 [[ ! -z $barchart ]] && echo -e "Chart Signal:\t"$barchart
 
-#TA pattern
+#TA patterns
 signal=$(mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker="$1 |egrep "MainContent_LastSignal"  |egrep -o ">[A-Z ]+</font>" |cut -d'<' -f1|cut -d'>' -f2)
 pattern=$(mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker="$1 |egrep "MainContent_LastPattern" |cut -d'>' -f3 |cut -d'<' -f1  |sed 's/NO PATTERN//g' |tr -d '\r\n')
 [[ ! -z $single  ]] && echo -e "USBull Signal\t"$signal
@@ -103,7 +103,6 @@ shortinterest=$(mycurl https://www.highshortinterest.com/all/ |egrep -o "q?s=[A-
 [[ ! -z $shortinterest ]] && echo -e "Short Interest:\tHigh"
 
 echo "What people say==================================================================================================="
-#Trading view
 mycurl https://www.tradingview.com/symbols/NYSE-$1 > tmp
 mycurl https://www.tradingview.com/symbols/NASDAQ-$1 >> tmp 
 mycurl https://www.tradingview.com/symbols/AMEX-$1 >> tmp #NYSE, NASDAQ, AMEX add up
@@ -122,7 +121,6 @@ do
   fi  
 done
 
-#stocktwits.com
 mycurl https://api.stocktwits.com/api/2/streams/symbol/$1.json 2>&1 > tmp1 
 cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
 |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
