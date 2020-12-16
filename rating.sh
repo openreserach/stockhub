@@ -40,8 +40,8 @@ do
   echo -e "Insider:\t\t$buysell"
 done
 
-echo "News------------------------------------------" #news in last 24-48 hours
-cat tmp |egrep -B 25 "$(date --date '2 days ago' +'%b-%d-%y')" |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
+echo "News------------------------------------------" #recent news to show "heat index"
+cat tmp |egrep -B 20 $(cat tmp| egrep "news-link" |egrep -m 2 -o ">[A-Z][a-z][a-z]-[0-9][0-9]-[0-9][0-9] " |tail -n 1) |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
 
 echo "Rating----------------------------------------"
 FinancialStrength=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
@@ -163,31 +163,31 @@ do
 done
 [[ -s tmp ]] && echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp
 
-#Whale Wisdom
-egrep "^$1," $WHALEWISDOM |sort | uniq |sed -e 's/whalewisdom-add.csv/Add/g' -e 's/whalewisdom-new.csv/New/g'> tmp
-[[ -s tmp ]] && echo "Whales Recent 13F filer-----------------------------------------------LastQ---LastY---"; \
-cat tmp  |awk -F',' '{printf("%-10s%-60s%-8s%-8s\n",$1,$2,$3,$4)}'
-
 if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.com  
   echo "ARK :Buy(+)/Sell(-)/Hold(0) in last 30 trading days----------------------------------"
   for ark in ARKW ARKK ARKQ ARKG ARKF
   do #show 30 days add(+)/sell(-)/hold(0) position for last 30 trading days from left to right
-    trend=$(mycurl 'https://www.arktrack.com/'$ark'.json' | jq -r '.[] | select(.ticker == "'$1'") |.shares' |tail -n 30 |tr '\n' ' ' \
+    trend=$(mycurl 'https://www.arktrack.com/'$ark'.json' | jq -r '.[] | select(.ticker | startswith("'$1'")) |.shares' |tail -n 30 |tr '\n' ' ' \
       |awk '{for (i = 1; i < NF; i++){x=$(i+1)-$i; if (x>0) printf "+";if (x<0) printf "-";if (x == 0) printf "0";}; }') #'
     [[ ! -z $trend ]] && echo "$ark:"$trend
   done
 fi
 
+#Whale Wisdom
+egrep "^$1," $WHALEWISDOM |sort | uniq |sed -e 's/whalewisdom-add.csv/Add/g' -e 's/whalewisdom-new.csv/New/g'> tmp
+[[ -s tmp ]] && echo "Recent 13F filers by whaleswisdom-------------------------------------LastQ---LastY---"; \
+cat tmp  |awk -F',' '{printf("%-10s%-60s%-8s%-8s\n",$1,$2,$3,$4)}'
+
 #Gurufocus Latest Buy  #TODO: https://www.gurufocus.com/stock/<ticker>/guru-trades
-mycurl "https://www.dataroma.com/m/activity.php?sym=$1&typ=a"  |cat -n > tmp 
+mycurl "https://www.dataroma.com/m/activity.php?sym=$1&typ=a"  | tr -d $'\r' |cat -n > tmp 
 last=$(cat tmp |egrep -o   '<b>Q[0-9]</b> &nbsp<b>[0-9]+' |head -n 1 |sed -e 's/<b>//g' -e 's/<\/b> &nbsp/ /g')
 head=$(cat tmp |egrep -m 2 '<b>Q[0-9]</b> &nbsp<b>[0-9]+' |head -n 1 |awk '{print $1}')
 tail=$(cat tmp |egrep -m 2 '<b>Q[0-9]</b> &nbsp<b>[0-9]+' |tail -n 1 |awk '{print $1}')
 if [[ ! -z $last && ! -z $head && ! -z $tail ]]; then 
-  echo "QQ-YYYY-Fund-------------------------------------------------------------Action-------"; 
+  echo "QQ-YYYY-13F filers by dataroma----------------------------------------Action----------"; 
   [[ $tail == $head ]] && tail=1000 
-  cat tmp |sed -n "${head},${tail}p" |egrep -o "\"firm\".+|class=\"buy.+|class=\"sell.+"  |sed 's/><//g' |cut -d'>' -f2 |tr -d '\n' |sed -e 's/[0-9]<\/td/\n/g' -e 's/<\/a\/td/,/g' -e 's/<\/td/,/g' |cut -d',' -f1,2 |while read buysell
+  cat tmp |sed -n "${head},${tail}p" |egrep -o '\"firm\">.+|class=\"buy\">[A-Z].+|class=\"sell\">[A-Z].+' |tr '\n' ',' |sed 's/"firm"/\n/g' |cut -d'>' -f3- |sed -e 's/<\/a>//g' -e 's/<\/td>//g' -e 's/class=\S*>//g' |egrep -v '^$' | while read buysell
   do
-    echo $last","$buysell|awk -F',' '{printf("%-8s%-65s%-15s\n",$1,$2,$3)}'
+    echo $last","$buysell|awk -F',' '{printf("%-8s%-62s%-15s\n",$1,$2,$3)}'
   done
 fi

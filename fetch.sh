@@ -76,4 +76,4 @@ mycurl "$ARK_CSV_URL/ARK_GENOMIC_REVOLUTION_MULTISECTOR_ETF_ARKG_HOLDINGS.csv"  
 mycurl "$ARK_CSV_URL/THE_3D_PRINTING_ETF_PRNT_HOLDINGS.csv"                      |egrep PRNT |cut -d',' -f2,4 |egrep -v "PRNT,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
 mycurl "$ARK_CSV_URL/ARK_ISRAEL_INNOVATIVE_TECHNOLOGY_ETF_IZRL_HOLDINGS.csv"     |egrep IZRL |cut -d',' -f2,4 |egrep -v "IZRL,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
 
-[[  $(find . -name "*.csv" -type f -size 0) == 0 ]] && echo "Incomplete" || echo "Complete" 
+[[  ! -z $(find . -name "*.csv" -type f -size 0) ]] && echo "Incomplete" || echo "Complete" 
