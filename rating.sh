@@ -145,8 +145,10 @@ mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '
 
 echo "What people do==================================================================================================="
 echo "Fool Player-------------------Rating--MM/DD/YYYY--Time--StartPrice--URL---------------"
-mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 27 "player/\w+" |egrep -A 2 "\w+.asp|numeric|date" |egrep -v '<td|td>|<a|a>|^\s+$|--' \
-|sed 's/[[:space:]]//g'|tr '\n' ',' |sed -E -e 's/-[0-9]+\.[0-9]+%,/\n/g' -e 's/\+[0-9]+\.[0-9]+%,/\n/g' -e 's/&lt;/</g' |egrep -v "<del" |head -n 5   \
+#mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 27 "player/\w+" |egrep -v '<del>' |egrep -A 2 "\w+.asp|numeric|date" |egrep -v '<td|td>|<a|a>|^\s+$|--' \
+#|sed 's/[[:space:]]//g'|tr '\n' ',' |sed -E -e 's/-[0-9]+\.[0-9]+%,/\n/g' -e 's/\+[0-9]+\.[0-9]+%,/\n/g' -e 's/&lt;/</g' |head -n 5   \
+mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 30 "player/\w+" |egrep -v "<del>|[[:space:]]+$" |egrep -A 2 "\w+.asp|numeric|date" \
+|egrep -v '<td|td>|<a|a>|^\s+$|--'|sed 's/[[:space:]]//g'|tr '\n' ',' |sed -E -e 's/-[0-9]+\.[0-9]+%,/\n/g' -e 's/\+[0-9]+\.[0-9]+%,/\n/g' -e 's/&lt;/</g'  |head -n 5 \
 |awk -F',' '{printf("%-30s%-8s%-12s%-6s%-12shttps://caps.fool.com/player/%s.aspx\n",$1,$2,$3,$4,$5,$1)}' 
 
 >tmp #Marketwatch games
@@ -165,7 +167,7 @@ if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.c
   echo "ARK :Buy(+)/Sell(-)/Hold(0) in last 30 trading days----------------------------------"
   for ark in ARKW ARKK ARKQ ARKG ARKF
   do #show 30 days add(+)/sell(-)/hold(0) position for last 30 trading days from left to right
-    trend=$(mycurl 'https://www.arktrack.com/'$ark'.json' | jq -r '.[] | select(.ticker | startswith("'$1'")) |.shares' |tail -n 30 |tr '\n' ' ' \
+    trend=$(mycurl 'https://www.arktrack.com/'$ark'.json' | jq -r '.[] | (.ticker|split(" ")[0]) as $short|select ($short == "'$1'") |.shares' | tail -n 30 |tr '\n' ' ' \
       |awk '{for (i = 1; i < NF; i++){x=$(i+1)-$i; if (x>0) printf "+";if (x<0) printf "-";if (x == 0) printf "0";}; }') #'
     [[ ! -z $trend ]] && echo "$ark:"$trend
   done
