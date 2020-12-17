@@ -45,16 +45,20 @@ evebitda=$(echo $keystat|sed -e 's/<tr/\n/g' -e 's/<\/tr/\n/g' |egrep -A 1 "Ente
 profitmargin=$(echo $keystat |sed 's/<tr/\n/g'| egrep  ">Profit Margin<"  |egrep -o ">[-.0-9]+%<" |sed -e 's/>//g' -e 's/<//g')
 revenuegrowth=$(echo $keystat |sed 's/<tr/\n/g'| egrep  ">Quarterly Revenue Growth" |egrep -o ">[-.0-9]+%<" |sed -e 's/>//g' -e 's/<//g')
 [[ ! -z $profitmargin && ! -z $revenuegrowth ]] && echo $profitmargin $revenuegrowth |awk '{printf("Rule-of-40%%:\t%3.2f%%\n",$1+$2)}' 
+gfvalue=$(mycurl https://www.gurufocus.com$(mycurl https://www.gurufocus.com/stock/$1/summary | egrep -o 'href=\"/term/gf_value/[^ ]+' |cut -d'"' -f2) |egrep -o '[0-9.]+ \(As of Today')
+[[ ! -z $gfvalue ]] && echo $gfvalue |awk '{if ($1<'$price') print "GuruFocus:\t\t$\033[31m"$1"\033[0m"; else print "GuruFocus:\t\t$\033[32m"$1"\033[0m";}' 
 
 echo "News-----------------------------------------" #recent (~1-2 days) news to show "heat index"
 cat tmp |egrep -B 20 $(cat tmp| egrep "news-link" |egrep -m 2 -o ">[A-Z][a-z][a-z]-[0-9][0-9]-[0-9][0-9] " |tail -n 1) |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
 
 echo "Ratings----------------------------------------"
-FinancialStrength=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+#export gurufocussummary=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength|Profitability Rank|Valuation Rank')
+#FinancialStrength=$(echo $gurufocussummary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+export FinancialStrength=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Financial Strength' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $FinancialStrength ]] && echo -e "Strength:\t"$FinancialStrength
-Profitability=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Profitability Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+export Profitability=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Profitability Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $Profitability ]] && echo -e "ProfitRank:\t"$Profitability
-Valuation=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Valuation Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
+export Valuation=$(mycurl https://www.gurufocus.com/stock/$1/summary |egrep -A 2 'Valuation Rank' |egrep -A 1 fc-regular  |egrep "[0-9]+/10")
 [[ ! -z $Valuation ]] && echo -e "Valuation:\t"$Valuation
 
 dateratingprice=$(mycurl -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+|\$[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',') #Crammer's MadMoney comments
