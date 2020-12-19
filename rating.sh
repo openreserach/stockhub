@@ -10,28 +10,31 @@ WHALEWISDOM="whalewisdom*.csv"
 ARK="ark.csv"
 GURUFOCUS="gurufocus.csv"
 
-mycurl "https://www.finviz.com/quote.ashx?t=$1" > tmp
-newsdate=$(cat tmp| egrep "news-link" |egrep -m 2 -o ">[A-Z][a-z][a-z]-[0-9][0-9]-[0-9][0-9]" |tail -n 1)
-market=$(cat tmp |egrep "ticker\">$1<" |cut -d'[' -f2 |cut -d']' -f1 |sed 's/NASD/NASDAQ/g')
+pagedump=$(mycurl "https://www.finviz.com/quote.ashx?t=$1")
+newsdate=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<tr/\n/g' | egrep "news-link" |egrep -m 2 -o ">[A-Z][a-z][a-z]-[0-9][0-9]-[0-9][0-9]" |tail -n 1)
+market=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<tr/\n/g' |egrep -o ">$1.+\[[A-Z]+\]"|cut -d'[' -f2 |cut -d']' -f1 |sed 's/NASD/NASDAQ/g')
+company=$(echo $pagedump |sed 's/^M/\n/g' |egrep -o '<title>.+<' |cut -d'>' -f2- |cut -d'<' -f1 |sed 's/Stock Quote//g')
+industry=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<\/tr>/\n/g' |egrep -o '\"center.+fullview-links.+tab-link\">.[^<]+' |egrep -o 'tab-link\">.[^<]+' |sed 's/<b>//g' |cut -d'>' -f2 |tr '\n' '>' |sed 's/>$//g')
+echo $company">"$industry
 
-cat tmp|grep "<title>" |cut -d'>' -f2 |cut -d'<' -f1 |sed 's/Stock Quote//g'
-cat tmp|grep center |grep fullview-links |grep tab-link |cut -d'>' -f4,6,8 |sed 's/<\/a/ /g'
-
-price=$(cat tmp |egrep "Current stock price" |egrep -o '>[0-9.]+<' |cut -d'>' -f2 |cut -d'<' -f1)
-updown=$(cat tmp |egrep "Change</td>" |egrep -o '>[0-9.]+%<|>\-[0-9.]+%<' |cut -d'>' -f2 |cut -d'<' -f1)
+price=$(echo $pagedump |sed 's/^M/\n/g' |egrep -o 'Current stock price].+<b>[0-9.]+</b>' |cut -d'>' -f5- |cut -d'<' -f1)
+updown=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<\/tr>/\n/g' |egrep -o "Change</td>.+" |cut -d'>' -f5- |cut -d'<' -f1)
 echo "$"$price $updown `date +%x`
+
 echo "Fundamentals--------------------------------"
-for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'PEG' 'P/FCF' 'Quick Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'Target Price' 'Recom' 'Insider Own' 'Insider Trans' 'Inst Own' 'Inst Trans' 'Dividend %' 'Rel Volume' 'Earnings'
-do
-	color=$(cat tmp |grep ">$key<" |egrep -o "is-red|is-green")
-	val=$(cat tmp |grep ">$key<" |egrep -o ">[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%|>-<" |tail -n 1 |sed -e 's/>//g' -e 's/<//g' -e 's/-//g')
+for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'PEG' 'P/FCF' 'Quick Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'Target Price' 'Recom' \
+            'Insider Own' 'Insider Trans' 'Inst Own' 'Inst Trans' 'Dividend %' 'Rel Volume' 'Earnings'
+do	
+  color=$(echo $pagedump |sed 's/^M/\n/g' |egrep -o ">$key<.+" |cut -c1-120 |egrep -o 'is-red|is-green')  
+  val=$(echo $pagedump |sed 's/^M/\n/g' |egrep -o ">$key<.+" |cut -c1-120 |egrep -o '>[0-9]+.[0-9]+<|>[0-9]+.[0-9]+B<|>[0-9]+.[0-9]+M<|>[0-9]+.[0-9]+%<|[A-Z][a-z]+ [0-9]+|[0-9]+.[0-9]+%|>-<' |tail -n 1 |sed -e 's/>//g' -e 's/<//g' -e 's/-//g')  
   [[ $color == 'is-red'   && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'  | awk  '{ print "\033[31m"$0"\033[0m";}'
   [[ $color == 'is-green' && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'  | awk  '{ print "\033[32m"$0"\033[0m";}'
   [[ -z $color            && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'
 done
 earningsuprise=$(mycurl https://www.benzinga.com/stock/$1/earnings |egrep -o "positive\">[0-9.]+%|negative\">[-0-9.]+%" |cut -d'>' -f2|awk '{print ($1>0)?"+":"-"}'|tr -d '\n')  #'
 [[ ! -z $earningsuprise ]] && echo -e "Earning Suprise\t"$earningsuprise 
-lastrating=$(mycurl "https://finviz.com/quote.ashx?t=$1" |egrep -A 3 -m 1 "body-table-rating.+[0-9]+-[0-9]+" |egrep -o -E  '>[$A-Za-z0-9&;. ]+</td>|b>[A-Za-z]+<\/b>|>[A-Z][a-z][a-z]-[0-9]+-[0-9]+' |sed 's/&rarr;/to/g' |cut -d'>' -f2 |cut -d'<' -f1 |tr '\n' ',')
+
+lastrating=$(mycurl https://www.benzinga.com/stock/$1/ratings |egrep -A 2 "Research Firm" |tail -n 1|cut -d'>' -f3,5,7,9,11 |sed 's/<\/td>/ /g' |cut -d'<' -f1)
 [[ ! -z $lastrating ]] && echo -e "Last Rating:\t"$lastrating
 
 mycurl https://finviz.com/insidertrading.ashx |sed 's/tr/\n/g' |egrep -w "t=$1" |egrep -o ">Buy<|>Sale<|>Option Exercise<" |sed -e 's/>//g' -e 's/<//g' |while read buysell
@@ -112,11 +115,9 @@ echo "News"$newsdate"===========================================================
 mycurl "https://www.finviz.com/quote.ashx?t=$1" |egrep -B 20 $newsdate |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
 
 echo "What people say==================================================================================================="
-mycurl https://www.tradingview.com/symbols/NYSE-$1 > tmp
-mycurl https://www.tradingview.com/symbols/NASDAQ-$1 >> tmp 
-mycurl https://www.tradingview.com/symbols/AMEX-$1 >> tmp #NYSE, NASDAQ, AMEX add up
-cat tmp |egrep  -A 45 -B 1 "idea__label tv-idea-label--long|idea__label tv-idea-label--short" |egrep -o "idea-label--long|idea-label--short|data-username=\"\S+\"|data-timestamp=\"[0-9]+.[0-9]|idea__timeframe\">, [0-9DWM]+<" |sed -e 's/idea__timeframe">, //g' -e 's/idea-label--//g' -e 's/data-username="//g' -e 's/data-timestamp=\"//g' -e 's/<//g' -e 's/"//g' |tr '\n' ','|sed 's/\.0,/\n/g' |awk -F',' '{if (NF>3) print $1","$2","$3","$4}' > tmp1
-[[ -s tmp1 ]] && echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" |awk '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'; cat tmp1|while read post
+mycurl "https://www.tradingview.com/symbols/$market-$1" > tmp #ticker on NYSE, NASDAQ, AMEX separately
+cat tmp  |egrep  -A 45 -B 1 "idea__label tv-idea-label--long|idea__label tv-idea-label--short" |egrep -o "idea-label--long|idea-label--short|data-username=\"\S+\"|data-timestamp=\"[0-9]+.[0-9]|idea__timeframe\">, [0-9DWM]+<" |sed -e 's/idea__timeframe">, //g' -e 's/idea-label--//g' -e 's/data-username="//g' -e 's/data-timestamp=\"//g' -e 's/<//g' -e 's/"//g' |tr '\n' ','|sed 's/\.0,/\n/g' |awk -F',' '{if (NF>3) print $1","$2","$3","$4}' > tmp
+[[ -s tmp ]] && echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" |awk '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'; cat tmp|while read post
 do  
   timestamp=$(date -d @`echo $post|cut -d',' -f4` +%Y%m%d)  
   timestampSec=$(date --date "$timestamp" +'%s')   
