@@ -44,7 +44,7 @@ done
 
 etf=$(mycurl "https://etfdb.com/stock/$1/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%"\
       |cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')
-[[ ! -z $etf ]] && echo $etf |awk '{printf("ETF/Weight\t\t%-s/%2.2f%%\n",$1,$2)}' 
+[[ ! -z $etf ]] && echo -e "ETF/Weight:\t\t"$etf #|awk '{printf("ETF/Weight\t\t%-s/%2.2f%%\n",$1,$2)}' 
 
 echo "Valuations------------------------------------"
 dcf=$(mycurl "https://www.gurufocus.com/dcf/$1" |egrep "var data = \[" |egrep -o "y:[-0-9.]+[^{]+/term/\w+/" |cut -d':' -f2,4 |sed "s/,color:'\/term//g" |cut -d'/' -f2,1 \
@@ -60,14 +60,20 @@ rule40=$(mycurl "https://www.google.com/finance/quote/$1:$market" |sed 's/<td/\n
 [[ ! -z $rule40 ]] && echo $rule40 |awk '{printf("Rule-of-40%%:\t%3.2f%%\n",$1+$2)}'
 
 
-gfvalue=$(mycurl https://www.gurufocus.com$(mycurl https://www.gurufocus.com/stock/$1/summary | egrep -o 'href=\"/term/gf_value/[^ ]+' |cut -d'"' -f2) |egrep -o '[0-9.]+ \(As of Today')
+gfvalue=$(mycurl https://www.gurufocus.com$(mycurl https://www.gurufocus.com/stock/$1/summary | egrep -o 'href=\"/term/gf_value/[^ ]+' |cut -d'"' -f2) |egrep -o '[0-9,.]+ \(As of Today')
 [[ ! -z $gfvalue   ]] && echo $gfvalue |awk '{if ($1<'$price') print "GuruFocus:\t\t$\033[31m"$1"\033[0m"; else print "GuruFocus:\t\t$\033[32m"$1"\033[0m";}' 
 
 fairvalue=$(mycurl https://finance.yahoo.com/quote/$1  |egrep -o 'Fw\(b\) Fl\(end\)\-\-m Fz\(s\).+'|cut -c1-80 |cut -d'>' -f2 |cut -d'<' -f1) #'
 [[ ! -z $fairvalue ]] && echo -e "Yahoo:\t\t\t"$fairvalue  #by Argus Research from Yahoo
 
 echo "Ratings-------------------------------------------"
-mycurl "https://www.gurufocus.com/stock/$1/summary" |egrep -A 2 '^Financial Strength|^Profitability Rank|^Valuation Rank' |egrep -v "^</" |tr '\n' ' ' |sed -e 's/--/\n/g' -e 's/Financial//g' -e 's/Rank//g' |awk '{if (NF==2) printf("%-16s%-5s\n",$1":",$2)}'
+pagedump=$(mycurl "https://www.gurufocus.com/stock/$1/summary" |egrep -A 2 '^Financial Strength|^Profitability Rank|^Valuation Rank'|egrep -v "</"|egrep -v "\-\-" |sed 's/Rank//g')
+strength=$(echo $pagedump |egrep -o 'Strength [0-9]+/10')
+[[ ! -z $strength ]] && echo $strength |awk '{printf("Strength:\t\t%s\n",$2)}'
+profitability=$(echo $pagedump |egrep -o 'Profitability [0-9]+/10')
+[[ ! -z $profitability ]] && echo $profitability |awk '{printf("Profitability:\t%s\n",$2)}'
+valuation=$(echo $pagedump |egrep -o 'Valuation [0-9]+/10')
+[[ ! -z $valuation ]] && echo $valuation |awk '{printf("Valuation:\t\t%s\n",$2)}'
 
 dateratingprice=$(mycurl -d "symbol=$1" "https://madmoney.thestreet.com/07/index.cfm?page=lookup" |egrep -A 12  '>[0-9]+/[0-9]+/[0-9]+<' |egrep -o '[0-9]+/[0-9]+/[0-9]+|[0-9]+.gif|\$[0-9]+.[0-9]+|\$[0-9]+' |head -n 3 |sed 's/.gif//g' |tr '\n' ',') #Crammer's MadMoney comments
 [[ ! -z $dateratingprice ]] && echo -e "Crammer:\t\t"$dateratingprice |sed -e 's/,1,/,Sell,/g' -e 's/,2,/,Negative,/g' -e 's/,3,/,Neural,/g' -e 's/,4,/,Postive,/g' -e 's/,5,/,Buy,/g'
@@ -115,8 +121,7 @@ echo "News"$newsdate"===========================================================
 mycurl "https://www.finviz.com/quote.ashx?t=$1" |egrep -B 20 $newsdate |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
 
 echo "What people say==================================================================================================="
-mycurl "https://www.tradingview.com/symbols/$market-$1" > tmp #ticker on NYSE, NASDAQ, AMEX separately
-cat tmp  |egrep  -A 45 -B 1 "idea__label tv-idea-label--long|idea__label tv-idea-label--short" |egrep -o "idea-label--long|idea-label--short|data-username=\"\S+\"|data-timestamp=\"[0-9]+.[0-9]|idea__timeframe\">, [0-9DWM]+<" |sed -e 's/idea__timeframe">, //g' -e 's/idea-label--//g' -e 's/data-username="//g' -e 's/data-timestamp=\"//g' -e 's/<//g' -e 's/"//g' |tr '\n' ','|sed 's/\.0,/\n/g' |awk -F',' '{if (NF>3) print $1","$2","$3","$4}' > tmp
+mycurl "https://www.tradingview.com/symbols/$market-$1"  |egrep  -A 45 -B 1 "idea__label tv-idea-label--long|idea__label tv-idea-label--short" |egrep -o "idea-label--long|idea-label--short|data-username=\"\S+\"|data-timestamp=\"[0-9]+.[0-9]|idea__timeframe\">, [0-9DWM]+<" |sed -e 's/idea__timeframe">, //g' -e 's/idea-label--//g' -e 's/data-username="//g' -e 's/data-timestamp=\"//g' -e 's/<//g' -e 's/"//g' |tr '\n' ','|sed 's/\.0,/\n/g' |awk -F',' '{if (NF>3) print $1","$2","$3","$4}' > tmp
 [[ -s tmp ]] && echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" |awk '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'; cat tmp|while read post
 do  
   timestamp=$(date -d @`echo $post|cut -d',' -f4` +%Y%m%d)  
