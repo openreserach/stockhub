@@ -3,7 +3,7 @@
 export MARKETWATCH="marketwatchgames.csv"
 export FOOLPICKS="foolrecentpick.csv" 
 export GAMES_IN_RECENTDAY=30    #days 
-export FOOL_PLAYER_RATING=60.0  #percent
+export FOOL_PLAYER_RATING=90.0  #percent
 export MARKET_CAP=1000000000    #$1B 
 
 >tmp
@@ -11,7 +11,7 @@ cat $MARKETWATCH |egrep ',Buy,' |sort |uniq |while read line
 do #recent buy in last N days
   transactionDate=$(echo $line |cut -d',' -f2)
   transactionSec=$(date --date "$transactionDate" +'%s')   
-  weekagoSec=$(date --date "$GAMES_IN_RECENTDAY days ago" +'%s')
+  weekagoSec=$(date --date "$GAMES_IN_RECENTDAY days ago" +'%s')  
   [ $transactionSec -gt $weekagoSec ] && echo $line |cut -d',' -f1 #>> tmp  
 done |sort |uniq >> tmp
 
@@ -30,4 +30,4 @@ do #picked ticker>1B cap size, from 3+ sources, and show ETF largest exposure (i
   [[ $cap -gt $MARKET_CAP ]] && echo -e $line" "$etf_weight |awk '{printf("%5s%8s%8s%8s\n",$1,$2,$3,$4)}'
 done
 
-#cat foolrecentpick.csv |awk -F',' '{if ($4>90.00) print $0}' |egrep -v '<20' |cut -d',' -f1 |sort |uniq -c |sort -nr |head 
+#cat foolrecentpick.csv |awk -F',' '{if ($4>90.00) print $0}' |egrep -v '<20' |cut -d',' -f1 |sort |uniq -c |sort -nr |egrep -v '\s+1' 

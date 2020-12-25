@@ -2,8 +2,8 @@
 
 shopt -s expand_aliases
 alias mycurl='curl -s --max-time 10 -L --ipv4 -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0"'
-
 set -- $(echo $1 |tr [:lower:] [:upper:]) #reset ticker to upper case
+
 FOOL="foolrecentpick.csv"
 GAMES="marketwatchgames.csv"
 WHALEWISDOM="whalewisdom*.csv"
@@ -11,8 +11,9 @@ ARK="ark.csv"
 GURUFOCUS="gurufocus.csv"
 
 pagedump=$(mycurl "https://www.finviz.com/quote.ashx?t=$1")
-newsdate=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<tr/\n/g' | egrep "news-link" |egrep -m 2 -o ">[A-Z][a-z][a-z]-[0-9][0-9]-[0-9][0-9]" |tail -n 1)
 market=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<tr/\n/g' |egrep -o ">$1.+\[[A-Z]+\]"|cut -d'[' -f2 |cut -d']' -f1 |sed 's/NASD/NASDAQ/g')
+[[ -z $market ]] && { echo "Not a NYSE and NASDAQ stock"; exit; }
+newsdate=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<tr/\n/g' | egrep "news-link" |egrep -m 2 -o ">[A-Z][a-z][a-z]-[0-9][0-9]-[0-9][0-9]" |tail -n 1)
 company=$(echo $pagedump |sed 's/^M/\n/g' |egrep -o '<title>.+<' |cut -d'>' -f2- |cut -d'<' -f1 |sed 's/Stock Quote//g')
 industry=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<\/tr>/\n/g' |egrep -o '\"center.+fullview-links.+tab-link\">.[^<]+' |egrep -o 'tab-link\">.[^<]+' |sed 's/<b>//g' |cut -d'>' -f2 |tr '\n' '>' |sed 's/>$//g')
 echo $company">"$industry
@@ -22,7 +23,7 @@ updown=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<\/tr>/\n/g' |egrep -o "Change<
 echo "$"$price $updown `date +%x`
 
 echo "Fundamentals--------------------------------"
-for key in 'Market Cap' 'P/E' 'Forward P/E' 'P/S' 'PEG' 'P/FCF' 'Quick Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'Target Price' 'Recom' \
+for key in 'Market Cap' 'Sales' 'P/E' 'Forward P/E' 'P/S' 'PEG' 'P/FCF' 'Quick Ratio' 'Debt/Eq' 'ROE' 'SMA20' 'SMA50' 'Target Price' 'Recom' \
             'Insider Own' 'Insider Trans' 'Inst Own' 'Inst Trans' 'Dividend %' 'Rel Volume' 'Earnings'
 do	
   color=$(echo $pagedump |sed 's/^M/\n/g' |egrep -o ">$key<.+" |cut -c1-120 |egrep -o 'is-red|is-green')  
@@ -120,7 +121,10 @@ shortinterest=$(mycurl https://www.highshortinterest.com/all/ |egrep -o "q?s=[A-
 echo "News"$newsdate"==================================================================================================" #recent (~1-2 days) news to show "heat index"
 mycurl "https://www.finviz.com/quote.ashx?t=$1" |egrep -B 20 $newsdate |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
 
-echo "What people say==================================================================================================="
+echo "What people say(social media)===================================================================================="
+#echo "Youtuber---------------------------------------------------------------------------------------------------------"
+#mycurl "https://www.youtube.com/results?search_query=$1+stock&sp=CAI%253D" |egrep -o 'title\":{\"runs\":\[{\"text\":\".[^}]+|[0-9] (minutes|hours|days) ago' |uniq |sed 's/title":{"runs":\[{"text":"//g' |tac |egrep -A 100 '[0-9] days' |tr '\n' ',' |sed 's/",/\n/g' |tac 
+
 mycurl "https://www.tradingview.com/symbols/$market-$1"  |egrep  -A 45 -B 1 "idea__label tv-idea-label--long|idea__label tv-idea-label--short" |egrep -o "idea-label--long|idea-label--short|data-username=\"\S+\"|data-timestamp=\"[0-9]+.[0-9]|idea__timeframe\">, [0-9DWM]+<" |sed -e 's/idea__timeframe">, //g' -e 's/idea-label--//g' -e 's/data-username="//g' -e 's/data-timestamp=\"//g' -e 's/<//g' -e 's/"//g' |tr '\n' ','|sed 's/\.0,/\n/g' |awk -F',' '{if (NF>3) print $1","$2","$3","$4}' > tmp
 [[ -s tmp ]] && echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" |awk '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'; cat tmp|while read post
 do  
@@ -139,10 +143,10 @@ done
 mycurl https://api.stocktwits.com/api/2/streams/symbol/$1.json 2>&1 > tmp1 
 cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
 |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
-[[ -s tmp ]] && echo "Stockwits Bull Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp
+[[ -s tmp ]] && { echo "Stockwits Bull Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp; }
 cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]'\
 |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
-[[ -s tmp ]] && echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp
+[[ -s tmp ]] && { echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp; }
 
 mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq '.experts[]|select (.ratings[].date>="'$(date -d "-30 days" "+%Y-%m-%d")'") |.ratings[0].url,.name,.rankings[0].stars,.rankings[0].avgReturn,.ratings[0].timestamp,.ratings[0].quote.title'|sed 's/"//g' |tr '\n' ';' |sed 's/http/\nhttp/g' |egrep -v '^$' > tmp
 [[ -s tmp ]] && echo "Expert Name--------------Rating-Return%-YYYY-MM-DD-----URL---------------------------Title------------------"; cat tmp |while read line
@@ -153,15 +157,16 @@ do              #Tipranks Expert's Rating(0-5), Return%(per rating), tiny-url-to
 done
 
 #SeekingAlpha Long ideas
-mycurl "https://seekingalpha.com/stock-ideas/long-ideas"|grep bull|egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+" |cut -d'/' -f3 |egrep -w "$1$"|sed "s/$1/SeekingAlpha-------------Long------/g"
+url=$(mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |egrep -o 'a-title\" href=\".[^"]+|\/symbol\/[A-Z]+' |egrep -B 1 -w "$1$" |head -n 1|cut -d'"' -f3)
+[[ ! -z $url ]] && { echo "SeekingAlpha-------------------------------------------------------------------------"; \
+echo $(mycurl "http://tinyurl.com/api-create.php?url="https://seekingalpha.com/"$url"); }
 
 #Barron's Picks & Pans
-mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron; do echo "Barron's Picks--------------"$barron"------"; done
+mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron
+do echo "Barron's Picks:"$barron"------------------------------------------------------------"; done
 
 echo "What people do==================================================================================================="
 echo "Fool Player-------------------Rating--MM/DD/YYYY--Time--StartPrice--URL---------------"
-#mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 27 "player/\w+" |egrep -v '<del>' |egrep -A 2 "\w+.asp|numeric|date" |egrep -v '<td|td>|<a|a>|^\s+$|--' \
-#|sed 's/[[:space:]]//g'|tr '\n' ',' |sed -E -e 's/-[0-9]+\.[0-9]+%,/\n/g' -e 's/\+[0-9]+\.[0-9]+%,/\n/g' -e 's/&lt;/</g' |head -n 5   \
 mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 30 "player/\w+" |egrep -v "<del>|[[:space:]]+$" |egrep -A 2 "\w+.asp|numeric|date" \
 |egrep -v '<td|td>|<a|a>|^\s+$|--'|sed 's/[[:space:]]//g'|tr '\n' ',' |sed -E -e 's/-[0-9]+\.[0-9]+%,/\n/g' -e 's/\+[0-9]+\.[0-9]+%,/\n/g' -e 's/&lt;/</g'  |head -n 5 \
 |awk -F',' '{printf("%-30s%-8s%-12s%-6s%-12shttps://caps.fool.com/player/%s.aspx\n",$1,$2,$3,$4,$5,$1)}' 
@@ -176,13 +181,13 @@ do
   tinyurl=$(mycurl "http://tinyurl.com/api-create.php?url=$url")  
   [ $transactionSec -gt $weekagoSec ] && echo $line,$tinyurl |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$6}' >> tmp
 done
-[[ -s tmp ]] && echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp
+[[ -s tmp ]] && { echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp; }
 
 if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.com  
-  echo "ARK :Buy(+)/Sell(-)/Hold(0) in last 30 trading days----------------------------------"
+  echo "ARK :Weight percent change in the fund (+/-/0) in last 30 trading days----------------------------------"
   for ark in ARKW ARKK ARKQ ARKG ARKF
-  do #show 30 days add(+)/sell(-)/hold(0) position for last 30 trading days from left to right
-    trend=$(mycurl 'https://www.arktrack.com/'$ark'.json' | jq -r '.[] | (.ticker|split(" ")[0]) as $short|select ($short == "'$1'") |.shares' | tail -n 30 |tr '\n' ' ' \
+  do #show percent-change for last 30 trading days, the rightmost being the most recent change
+    trend=$(mycurl 'https://www.arktrack.com/'$ark'.json' | jq -r '.[] | (.ticker|split(" ")[0]) as $short|select ($short == "'$1'") |.percent' | tail -n 30 |tr '\n' ' ' \
       |awk '{for (i = 1; i < NF; i++){x=$(i+1)-$i; if (x>0) printf "+";if (x<0) printf "-";if (x == 0) printf "0";}; }') #'
     [[ ! -z $trend ]] && echo "$ark:"$trend
   done

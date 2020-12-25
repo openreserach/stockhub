@@ -12,9 +12,23 @@ echo -e "Equity Put/Call Ratio:\t"$(tail -n 1 tmp)
 echo -e "Personal Saving Rate:\t"$(mycurl "https://fred.stlouisfed.org/series/PSAVERT" |egrep '20[0-9]+: <span class="series-meta-observation-value' |sed -e 's/: <span class="series-meta-observation-value">/ /g' |cut -d'<' -f1|sed 's/^[[:space:]]*//g')"%"   
 echo -e "Crash Index:\t\t\t"$(mycurl https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly |jq ".dataset_data.data[0]"  |tail -n +3 |head -n 1|sed -e 's/ //g' -e 's/,//g')
 #TODO:VIX, ...
-
-
 rm -f *.csv tmp*
+
+>ark.csv; ARK_CSV_URL="https://ark-funds.com/wp-content/fundsiteliterature/csv"; echo -n "."
+mycurl "$ARK_CSV_URL/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv"                       |egrep ARKK |cut -d',' -f2,4 |egrep -v "ARKK,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
+mycurl "$ARK_CSV_URL/ARK_NEXT_GENERATION_INTERNET_ETF_ARKW_HOLDINGS.csv"         |egrep ARKW |cut -d',' -f2,4 |egrep -v "ARKW,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
+mycurl "$ARK_CSV_URL/ARK_AUTONOMOUS_TECHNOLOGY_&_ROBOTICS_ETF_ARKQ_HOLDINGS.csv" |egrep ARKQ |cut -d',' -f2,4 |egrep -v "ARKQ,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
+mycurl "$ARK_CSV_URL/ARK_FINTECH_INNOVATION_ETF_ARKF_HOLDINGS.csv"               |egrep ARKF |cut -d',' -f2,4 |egrep -v "ARKF,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
+mycurl "$ARK_CSV_URL/ARK_GENOMIC_REVOLUTION_MULTISECTOR_ETF_ARKG_HOLDINGS.csv"   |egrep ARKG |cut -d',' -f2,4 |egrep -v "ARKG,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
+mycurl "$ARK_CSV_URL/THE_3D_PRINTING_ETF_PRNT_HOLDINGS.csv"                      |egrep PRNT |cut -d',' -f2,4 |egrep -v "PRNT,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
+mycurl "$ARK_CSV_URL/ARK_ISRAEL_INNOVATIVE_TECHNOLOGY_ETF_IZRL_HOLDINGS.csv"     |egrep IZRL |cut -d',' -f2,4 |egrep -v "IZRL,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
+
+#SeekingAlpha Latest Long ideas
+mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+" |sed -n '1!p'  |cut -d'/' -f3 |tr '[:lower:]' '[:upper:]' > seekingalphalong.csv
+
+#Gurufocus latest picks
+mycurl https://www.gurufocus.com/guru/latest-picks |egrep '^Buy:|^Add:|Sell:|^Reduce:|^[A-Z]{1,5}$' |egrep -v "USA|RSS|FAQ|API|ETF" |egrep  '^[A-Z]+' |tr '\n' ',' |sed -e's/,Buy:/\nBuy:/g' -e 's/,Reduce:/\nReduce:/g' -e 's/,Sell:/\nSell:/g' -e 's/,Add:/\nAdd:/g' |sed 's/:,/:/g' |egrep -v ':$' > gurufocus.csv
+
 #MotleyFool players recent trading 
 >foolrecentpick.csv
 seq 0 49 |while read pagenum 
@@ -44,12 +58,6 @@ do #annually pick active games with more participants
   done
 done
 
-#SeekingAlpha Latest Long ideas
-mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+" |sed -n '1!p'  |cut -d'/' -f3 |tr '[:lower:]' '[:upper:]' > seekingalphalong.csv
-
-#Gurufocus latest picks
-mycurl https://www.gurufocus.com/guru/latest-picks |egrep '^Buy:|^Add:|Sell:|^Reduce:|^[A-Z]{1,5}$' |egrep -v "USA|RSS|FAQ|API|ETF" |egrep  '^[A-Z]+' |tr '\n' ',' |sed -e's/,Buy:/\nBuy:/g' -e 's/,Reduce:/\nReduce:/g' -e 's/,Sell:/\nSell:/g' -e 's/,Add:/\nAdd:/g' |sed 's/:,/:/g' |egrep -v ':$' > gurufocus.csv
-
 #whalewisdom.com guru recent positions 
 > whalewisdom-new.csv #new positions
 > whalewisdom-add.csv #added to existing positions
@@ -66,14 +74,5 @@ do
     echo $add","$filer","$performance >> whalewisdom-add.csv
   done
 done
-
->ark.csv; ARK_CSV_URL="https://ark-funds.com/wp-content/fundsiteliterature/csv"; echo "."
-mycurl "$ARK_CSV_URL/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv"                       |egrep ARKK |cut -d',' -f2,4 |egrep -v "ARKK,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
-mycurl "$ARK_CSV_URL/ARK_NEXT_GENERATION_INTERNET_ETF_ARKW_HOLDINGS.csv"         |egrep ARKW |cut -d',' -f2,4 |egrep -v "ARKW,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
-mycurl "$ARK_CSV_URL/ARK_AUTONOMOUS_TECHNOLOGY_&_ROBOTICS_ETF_ARKQ_HOLDINGS.csv" |egrep ARKQ |cut -d',' -f2,4 |egrep -v "ARKQ,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
-mycurl "$ARK_CSV_URL/ARK_FINTECH_INNOVATION_ETF_ARKF_HOLDINGS.csv"               |egrep ARKF |cut -d',' -f2,4 |egrep -v "ARKF,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
-mycurl "$ARK_CSV_URL/ARK_GENOMIC_REVOLUTION_MULTISECTOR_ETF_ARKG_HOLDINGS.csv"   |egrep ARKG |cut -d',' -f2,4 |egrep -v "ARKG,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
-mycurl "$ARK_CSV_URL/THE_3D_PRINTING_ETF_PRNT_HOLDINGS.csv"                      |egrep PRNT |cut -d',' -f2,4 |egrep -v "PRNT,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
-mycurl "$ARK_CSV_URL/ARK_ISRAEL_INNOVATIVE_TECHNOLOGY_ETF_IZRL_HOLDINGS.csv"     |egrep IZRL |cut -d',' -f2,4 |egrep -v "IZRL,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
 
 [[  ! -z $(find . -name "*.csv" -type f -size 0) ]] && echo "Incomplete" || echo "Complete" 
