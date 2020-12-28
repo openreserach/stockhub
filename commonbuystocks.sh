@@ -15,11 +15,12 @@ do #recent buy in last N days
   [ $transactionSec -gt $weekagoSec ] && echo $line |cut -d',' -f1 #>> tmp  
 done |sort |uniq >> tmp
 
-cat $FOOLPICKS            |awk -F',' '{if( $4>'$FOOL_PLAYER_RATING'){print $1}}' |sort  >> tmp 
-cat seekingalphalong.csv  |sort >> tmp                                        #recent(~2days) LONG recommendation by seekingalpha
-cat gurufocus.csv         |egrep "Buy:|Add:" |cut -d':' -f2 |tr ',' '\n'>>tmp #Guru's recent Buy/Add
-cat whalewisdom*.csv      |cut -d',' -f1 |sort |uniq  >> tmp                  #13F recent filer's holdings
-cat ark.csv |egrep '^ARK' |cut -d',' -f2 |sort |uniq |egrep [A-Z]+ >> tmp     #all ARK* invenstment holdings
+curl -s "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |cut -d',' -f1 |egrep -v '^$' |sort |uniq >> tmp    #Barron's pick
+cat $FOOLPICKS        |awk -F',' '{if( $4>'$FOOL_PLAYER_RATING'){print $1}}'|sort >> tmp  #FOOL high rating players' picks
+cat seekingalphalong.csv  |sort >> tmp                                                    #recent(~2days) LONG recommendation by seekingalpha
+cat gurufocus.csv         |egrep "Buy:|Add:" |cut -d':' -f2 |tr ',' '\n'>>tmp             #Guru's recent Buy/Add
+cat whalewisdom*.csv      |cut -d',' -f1 |sort |uniq  >> tmp                              #13F recent filer's holdings
+cat ark.csv |egrep '^ARK' |cut -d',' -f2 |sort |uniq |egrep [A-Z]+ >> tmp                 #all ARK* invenstment holdings
 
 echo "Sources Ticker    ETF   Weight"
 cat tmp |sort |uniq -c |sort -r -n | egrep -v '\s+1\s|\s+2\s'  |while read line
