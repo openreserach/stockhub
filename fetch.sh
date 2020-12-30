@@ -75,4 +75,34 @@ do
   done
 done
 
+>youtubers.csv
+mycurl https://finvid-recap.com/stock-moe-youtube-stock-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
+do
+	echo "Stock-Moe,"$ticker >>youtubers.csv
+done
+mycurl https://finvid-recap.com/jeremy-lefebvre-financial-education-youtube-stock-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
+do
+	echo "Financial-Education,"$ticker >>youtubers.csv
+done
+mycurl https://finvid-recap.com/meet-kevin-paffrath-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
+do
+	echo "Kevin-Paffrath,"$ticker >>youtubers.csv
+done
+mycurl https://finvid-recap.com/george-perez-youtube-stock-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
+do
+	echo "George-Perez,"$ticker >>youtubers.csv
+done
+mycurl https://finvid-recap.com/profile-chris-sain-jr |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
+do
+	echo "Chris-Sain,"$ticker >>youtubers.csv
+done
+mycurl https://finvid-recap.com/lets-talk-money-with-joseph-hogue-cfa-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
+do
+	echo "Joseph-Hogue,"$ticker >>youtubers.csv
+done
+mycurl https://finvid-recap.com/jack-spencer-investing-stock-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
+do
+	echo "Jack-Spencer,"$ticker >>youtubers.csv
+done
+
 [[  ! -z $(find . -name "*.csv" -type f -size 0) ]] && echo "Incomplete" || echo "Complete" 

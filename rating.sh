@@ -25,7 +25,7 @@ updown=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<\/tr>/\n/g' |egrep -o "Change<
 echo "$"$price $updown `date +%x`
 
 echo "Fundamentals--------------------------------"
-for key in 'Market Cap' 'Sales' 'P/E' 'Forward P/E' 'P/S' 'PEG' 'P/FCF' 'Current Ratio' 'Gross Margin' 'ROE' 'SMA20' 'SMA50' 'Target Price' 'Recom' \
+for key in 'Market Cap' 'Income' 'P/E' 'Forward P/E' 'P/S' 'PEG' 'P/FCF' 'Current Ratio' 'Gross Margin' 'ROE' 'SMA20' 'SMA50' 'Target Price' 'Recom' \
             'Insider Own' 'Insider Trans' 'Inst Own' 'Inst Trans' 'Dividend %' 'Rel Volume' 'Earnings'
 do	
   color=$(echo $pagedump |sed 's/^M/\n/g' |egrep -o ">$key<.+" |cut -c1-120 |egrep -o 'is-red|is-green')  
@@ -50,16 +50,15 @@ etf=$(mycurl "https://etfdb.com/stock/$1/"|egrep Ticker|egrep Weighting|head -n 
 [[ $etf ]] && echo -e "ETF/Weight:\t\t"$etf #|awk '{printf("ETF/Weight\t\t%-s/%2.2f%%\n",$1,$2)}' 
 
 echo "Valuations------------------------------------"
-dcf=$(mycurl "https://www.gurufocus.com/dcf/$1" |egrep "var data = \[" |egrep -o "y:[-0-9.]+[^{]+/term/\w+/" |cut -d':' -f2,4 |sed "s/,color:'\/term//g" |cut -d'/' -f2,1 \
-      |egrep iv_dc |sort -nr |sed -e 's/iv_dcf_share/(Projectd-FCF-based)/g' -e 's/\/iv_dcf/(FCF-based)/g' -e 's/\/iv_dcEarning/(Earning-based)/g' |head -n 1) #'
-[[ $dcf ]] && echo $dcf |awk '{printf("Max DCF:\t\t%s\n",$1)}'
+dcf=$(mycurl "https://www.gurufocus.com/stock/$1/dcf" |egrep -o ",iv_dcEarning:[0-9.]+|,iv_dcf:[0-9.]+" |cut -d':' -f2 |tr '\n' '/' |sed 's/\/$//g')
+[[ $dcf ]] && echo -e "DCF(Earn/FCF):\t"$dcf
 
 keystat=$(mycurl https://finance.yahoo.com/quote/$1/key-statistics)
 evebitda=$(echo $keystat|sed -e 's/<tr/\n/g' -e 's/<\/tr/\n/g' |egrep -A 1 "Enterprise Value/EBITDA"  |egrep -o  'data-reactid="[0-9]+\">[-0-9.k]+</td' |head -n 1 |cut -d'>' -f2 |cut -d'<' -f1)
 [[ $evebitda ]] && echo $evebitda |awk '{printf("EV/EBITDA:\t\t%3.2f\n",$1)}'
 
 ##ref:https://www.fool.com/investing/2019/09/25/introducing-the-rule-of-40-and-why-investors-shoul.aspx
-rule40=$(mycurl "https://finnhub.io/api/v1/stock/metric?symbol=$1&metric=all&token=$FINNHUB_KEY" |jq ".metric.revenueGrowthTTMYoy,.metric.netProfitMarginAnnual"|tr '\n' ' ')
+rule40=$(mycurl "https://finnhub.io/api/v1/stock/metric?symbol=$1&metric=all&token=$FINNHUB_KEY" |jq ".metric.revenueGrowthTTMYoy,.metric.netProfitMarginAnnual" |egrep -v null |tr '\n' ' ')
 [[ $rule40 ]] && echo $rule40 |awk '{printf("Rule-of-40%%:\t%3.2f%%\n",$1+$2)}'
 
 gfvalue=$(mycurl https://www.gurufocus.com$(mycurl https://www.gurufocus.com/stock/$1/summary | egrep -o 'href=\"/term/gf_value/[^ ]+' |cut -d'"' -f2) |egrep -o '[0-9,.]+ \(As of Today')
@@ -142,11 +141,11 @@ do
 done
 [[ -s tmp ]] && echo "TradingviewUser LongShort YYYYMMDD TradeWindow Reputation #Ideas #Likes #Followers" |awk '{printf "%-30s%-10s%-10s%-12s%-12s%-10s%-10s%-10s\n",$1,$2,$3,$4,$5,$6,$7,$8}'; cat tmp
 
-mycurl https://api.stocktwits.com/api/2/streams/symbol/$1.json > tmp1 
-cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]' 2>/dev/null\
+pagedump=$(mycurl https://api.stocktwits.com/api/2/streams/symbol/$1.json)
+echo $pagedump |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]' 2>/dev/null\
   |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
 [[ -s tmp ]] && { echo "Stockwits Bull Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp; }
-cat tmp1 |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]' 2>/dev/null \
+echo $pagedump |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]' 2>/dev/null \
   |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
 [[ -s tmp ]] && { echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp; }
 
