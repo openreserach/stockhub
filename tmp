@@ -1,0 +1,283 @@
+     1	<!DOCTYPE html>
+     2	<html lang="en-US">
+     3	<head>
+     4	<!-- Global site tag (gtag.js) - Google Analytics -->
+     5	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-19690198-1"></script>
+     6	<script>
+     7	  window.dataLayer = window.dataLayer || [];
+     8	  function gtag(){dataLayer.push(arguments);}
+     9	  gtag('js', new Date());
+    10	
+    11	  gtag('config', 'UA-19690198-1');
+    12	</script>
+    13	
+    14	<title>DATAROMA Superinvestor Portfolio Activity </title>
+    15	<meta charset="utf-8">
+    16	<meta name="Description" content="Track stock picks and portfolios of legendary value investors such as Warren Buffett" />
+    17	
+    18	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    19	<link rel="stylesheet" href="/m/inc/m1.css" type="text/css" />
+    20	<link rel="stylesheet" href="/m/inc/top_menu.css?v2" type="text/css" />
+    21	<script type="text/javascript" src="http://apis.google.com/js/plusone.js"></script>
+    22	
+    23	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    24	<script>
+    25	     (adsbygoogle = window.adsbygoogle || []).push({
+    26	          google_ad_client: "ca-pub-5474305909373653",
+    27	          enable_page_level_ads: true
+    28	     });
+    29	</script><link rel="stylesheet" href="activity.css" type="text/css" />
+    30	<link rel="stylesheet" href="/m/inc/grid_style.css" type="text/css" />
+    31	<link rel="stylesheet" href="/m/inc/st_menu.css" type="text/css" />
+    32	</head>
+    33	<body>
+    34	<div id="mb"><div id="logo" unselectable="on">
+    35	DATAROMA
+    36	</div><div id="top">
+    37	<ul><li><a class="" href="/m/home.php">Home</a></li><li><a class="" href="/m/comm.php">Commentaries/Articles</a></li><li><a class="" href="/m/managers.php">Superinvestors</a></li><li><a class="" href="/m/allact.php?typ=a">Activity</a></li><li><a class="" href="/m/grid.php">S&P500 Grid</a></li><li><a class="" href="/m/g/portfolio.php">Grand Portfolio</a></li><li><a class="" href="/m/rt.php">RealTime</a></li><li><a class="" href="/m/ins/ins.php">Insider</a></li></ul>
+    38	<form action="/m/stock.php" method="get" onsubmit="if (document.getElementById('txt').value=='stock symbol / name' || document.getElementById('txt').value=='') {return false;} else {document.getElementById('txt').value = document.getElementById('txt').value.toUpperCase(); return true;}">
+    39	<div id="frm">
+    40	<input type="text" name="sym" id="txt" maxlength="30" value="stock symbol / name" onmouseover="this.style.color='#666';" onmouseout="if(this.value=='stock symbol / name') {this.style.color='#ccc';}" onfocus="this.style.color='#666'; if (this.value=='stock symbol / name') {this.value='';}" onblur="if (this.value=='') {this.value='stock symbol / name';} if(this.value=='stock symbol / name') {this.style.color='#ccc';}" />
+    41	<input type="submit" id="but" value=">>" />
+    42	</div>
+    43	</form>
+    44	</div><link rel="stylesheet" href="/m/inc/f_pagination.css" type="text/css" /><div id="main"><script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    45	<!-- activity_top -->
+    46	<ins class="adsbygoogle"
+    47	     style="display:block"
+    48	     data-ad-client="ca-pub-5474305909373653"
+    49	     data-ad-slot="8485952244"
+    50	     data-ad-format="auto"></ins>
+    51	<script>
+    52	(adsbygoogle = window.adsbygoogle || []).push({});
+    53	</script>
+    54	
+    55	<div id="b1">
+    56	<p id="st_name">Apple Inc. (AAPL)</p>
+    57	<table id="t1">
+    58	<tr><td>Sector:</td><td><b>Information Technology</b></td></tr>
+    59	<tr><td></td><td></td></tr>
+    60	<tr><td><b>Super Investor Stats:</b></td><td></td></tr>
+    61	<tr><td>Ownership count:</td><td><b>11</b></td></tr>
+    62	<tr><td>Ownership rank:</td><td><b>22</b></td></tr>
+    63	<tr><td>% of all portfolios:</td><td><b>1.021%</b></td></tr><tr id="hold_price"><td>Hold Price * :</td><td id="price">$115.81</td></tr></table>
+    64	</div>
+    65	<ul id="grid_menu">
+    66	<li id="ownership"><a  href="/m/stock.php?sym=AAPL" title="Ownership list">Ownership</a></li>
+    67	<li><a class="selected" href="/m/activity.php?sym=AAPL&typ=a" title="All activities">Activity</a></li>
+    68	<li><a  href="/m/activity.php?sym=AAPL&typ=b" title="Buys and adds only">Buys</a></li>
+    69	<li><a  href="/m/activity.php?sym=AAPL&typ=s" title="Sells and reductions only">Sells</a></li>
+    70	<li id="insider"><a  href="/m/ins/ins.php?t=y&&sym=AAPL&o=fd&d=d" title="Insider Transactions">Insider</a></li>
+    71	</ul><div id="wrap"><table id="grid"><thead><tr>
+    72	<td>History</td>
+    73	<td class="firm">Portfolio Manager</td>
+    74	<td class="act"><a href="/m/activity.php?sym=AAPL&typ=a&o=au" title="Click to sort">Activity <span class="arrow">&#9660</span></a></td>
+    75	<td class="shares">Share change</td>
+    76	<td class="pct"><a href="/m/activity.php?sym=AAPL&typ=a&o=p" title="Click to sort">% change to portfolio <span class="arrow"></span></a></td>
+    77	</tr></thead><tbody><tr class="q_chg"><td colspan="6"><b>Q3</b> &nbsp<b>2020</b></td></tr><tr>
+    78	<td class="hist"><a href="/m/hist/hist.php?f=mc&s=AAPL" title="Holding/activity history">&#8801</a></td>
+    79	<td class="firm"><a href="/m/holdings.php?m=mc">Lee Ainslie - Maverick Capital</a></td>
+    80	<td class="buy">Add 11300.00%</td>
+    81	<td class="buy">29,832</td>
+    82	<td>0.06</td>
+    83	</tr><tr>
+    84	<td class="hist"><a href="/m/hist/hist.php?f=GR&s=AAPL" title="Holding/activity history">&#8801</a></td>
+    85	<td class="firm"><a href="/m/holdings.php?m=GR">Thomas Russo - Gardner Russo & Gardner</a></td>
+    86	<td class="buy">Add 11.15%</td>
+    87	<td class="buy">908</td>
+    88	<td>0.00</td>
+    89	</tr><tr>
+    90	<td class="hist"><a href="/m/hist/hist.php?f=fairx&s=AAPL" title="Holding/activity history">&#8801</a></td>
+    91	<td class="firm"><a href="/m/holdings.php?m=fairx">Bruce Berkowitz - Fairholme Capital</a></td>
+    92	<td class="buy">Buy </td>
+    93	<td class="buy">4,260</td>
+    94	<td>0.08</td>
+    95	</tr><tr>
+    96	<td class="hist"><a href="/m/hist/hist.php?f=BRK&s=AAPL" title="Holding/activity history">&#8801</a></td>
+    97	<td class="firm"><a href="/m/holdings.php?m=BRK">Warren Buffett - Berkshire Hathaway</a></td>
+    98	<td class="sell">Reduce 3.70%</td>
+    99	<td class="sell">36,326,710</td>
+   100	<td>1.84</td>
+   101	</tr><tr>
+   102	<td class="hist"><a href="/m/hist/hist.php?f=jensx&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   103	<td class="firm"><a href="/m/holdings.php?m=jensx">Jensen Quality Growth Fund
+   104	</a></td>
+   105	<td class="sell">Reduce 24.03%</td>
+   106	<td class="sell">1,189,000</td>
+   107	<td>1.48</td>
+   108	</tr><tr>
+   109	<td class="hist"><a href="/m/hist/hist.php?f=WP&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   110	<td class="firm"><a href="/m/holdings.php?m=WP">David Rolfe - Wedgewood Partners</a></td>
+   111	<td class="sell">Reduce 35.42%</td>
+   112	<td class="sell">260,539</td>
+   113	<td>4.77</td>
+   114	</tr><tr>
+   115	<td class="hist"><a href="/m/hist/hist.php?f=OFALX&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   116	<td class="firm"><a href="/m/holdings.php?m=OFALX">Robert Olstein - Olstein Capital Management</a></td>
+   117	<td class="sell">Reduce 43.64%</td>
+   118	<td class="sell">48,000</td>
+   119	<td>1.01</td>
+   120	</tr><tr>
+   121	<td class="hist"><a href="/m/hist/hist.php?f=TVAFX&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   122	<td class="firm"><a href="/m/holdings.php?m=TVAFX">Thornburg Value Fund</a></td>
+   123	<td class="sell">Reduce 79.44%</td>
+   124	<td class="sell">225,040</td>
+   125	<td>3.59</td>
+   126	</tr><tr>
+   127	<td class="hist"><a href="/m/hist/hist.php?f=KB&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   128	<td class="firm"><a href="/m/holdings.php?m=KB">Kahn Brothers Advisors - Kahn Brothers Group</a></td>
+   129	<td class="sell">Sell 100.00%</td>
+   130	<td class="sell">1,200</td>
+   131	<td>0.02</td>
+   132	</tr><tr class="q_chg"><td colspan="6"><b>Q2</b> &nbsp<b>2020</b></td></tr><tr>
+   133	<td class="hist"><a href="/m/hist/hist.php?f=MAVFX&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   134	<td class="firm"><a href="/m/holdings.php?m=MAVFX">David Katz - Matrix Advisors Value</a></td>
+   135	<td class="sell">Reduce 1.60%</td>
+   136	<td class="sell">300</td>
+   137	<td>0.06</td>
+   138	</tr><tr>
+   139	<td class="hist"><a href="/m/hist/hist.php?f=WP&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   140	<td class="firm"><a href="/m/holdings.php?m=WP">David Rolfe - Wedgewood Partners</a></td>
+   141	<td class="sell">Reduce 12.19%</td>
+   142	<td class="sell">102,108</td>
+   143	<td>1.58</td>
+   144	</tr><tr>
+   145	<td class="hist"><a href="/m/hist/hist.php?f=mc&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   146	<td class="firm"><a href="/m/holdings.php?m=mc">Lee Ainslie - Maverick Capital</a></td>
+   147	<td class="sell">Reduce 99.80%</td>
+   148	<td class="sell">132,928</td>
+   149	<td>0.00</td>
+   150	</tr><tr class="q_chg"><td colspan="6"><b>Q1</b> &nbsp<b>2020</b></td></tr><tr>
+   151	<td class="hist"><a href="/m/hist/hist.php?f=OFALX&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   152	<td class="firm"><a href="/m/holdings.php?m=OFALX">Robert Olstein - Olstein Capital Management</a></td>
+   153	<td class="buy">Add 44.74%</td>
+   154	<td class="buy">34,000</td>
+   155	<td>0.47</td>
+   156	</tr><tr>
+   157	<td class="hist"><a href="/m/hist/hist.php?f=GR&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   158	<td class="firm"><a href="/m/holdings.php?m=GR">Thomas Russo - Gardner Russo & Gardner</a></td>
+   159	<td class="buy">Add 2.01%</td>
+   160	<td class="buy">160</td>
+   161	<td>0.00</td>
+   162	</tr><tr>
+   163	<td class="hist"><a href="/m/hist/hist.php?f=MKL&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   164	<td class="firm"><a href="/m/holdings.php?m=MKL">Thomas Gayner - Markel Asset Management</a></td>
+   165	<td class="buy">Add 0.20%</td>
+   166	<td class="buy">2,400</td>
+   167	<td>0.00</td>
+   168	</tr><tr>
+   169	<td class="hist"><a href="/m/hist/hist.php?f=GFT&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   170	<td class="firm"><a href="/m/holdings.php?m=GFT">Bill & Melinda Gates Foundation Trust</a></td>
+   171	<td class="buy">Buy </td>
+   172	<td class="buy">2,004,176</td>
+   173	<td>0.73</td>
+   174	</tr><tr>
+   175	<td class="hist"><a href="/m/hist/hist.php?f=MAVFX&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   176	<td class="firm"><a href="/m/holdings.php?m=MAVFX">David Katz - Matrix Advisors Value</a></td>
+   177	<td class="sell">Reduce 2.60%</td>
+   178	<td class="sell">500</td>
+   179	<td>0.08</td>
+   180	</tr><tr>
+   181	<td class="hist"><a href="/m/hist/hist.php?f=jensx&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   182	<td class="firm"><a href="/m/holdings.php?m=jensx">Jensen Quality Growth Fund
+   183	</a></td>
+   184	<td class="sell">Reduce 7.76%</td>
+   185	<td class="sell">416,000</td>
+   186	<td>0.36</td>
+   187	</tr><tr>
+   188	<td class="hist"><a href="/m/hist/hist.php?f=TVAFX&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   189	<td class="firm"><a href="/m/holdings.php?m=TVAFX">Thornburg Value Fund</a></td>
+   190	<td class="sell">Reduce 23.24%</td>
+   191	<td class="sell">85,776</td>
+   192	<td>0.88</td>
+   193	</tr><tr>
+   194	<td class="hist"><a href="/m/hist/hist.php?f=WP&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   195	<td class="firm"><a href="/m/holdings.php?m=WP">David Rolfe - Wedgewood Partners</a></td>
+   196	<td class="sell">Reduce 35.59%</td>
+   197	<td class="sell">462,816</td>
+   198	<td>5.58</td>
+   199	</tr><tr>
+   200	<td class="hist"><a href="/m/hist/hist.php?f=mc&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   201	<td class="firm"><a href="/m/holdings.php?m=mc">Lee Ainslie - Maverick Capital</a></td>
+   202	<td class="sell">Reduce 36.36%</td>
+   203	<td class="sell">76,100</td>
+   204	<td>0.10</td>
+   205	</tr><tr>
+   206	<td class="hist"><a href="/m/hist/hist.php?f=KB&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   207	<td class="firm"><a href="/m/holdings.php?m=KB">Kahn Brothers Advisors - Kahn Brothers Group</a></td>
+   208	<td class="sell">Reduce 70.67%</td>
+   209	<td class="sell">2,892</td>
+   210	<td>0.02</td>
+   211	</tr><tr class="q_chg"><td colspan="6"><b>Q4</b> &nbsp<b>2019</b></td></tr><tr>
+   212	<td class="hist"><a href="/m/hist/hist.php?f=KB&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   213	<td class="firm"><a href="/m/holdings.php?m=KB">Kahn Brothers Advisors - Kahn Brothers Group</a></td>
+   214	<td class="buy">Add 104.60%</td>
+   215	<td class="buy">2,092</td>
+   216	<td>0.02</td>
+   217	</tr><tr>
+   218	<td class="hist"><a href="/m/hist/hist.php?f=MKL&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   219	<td class="firm"><a href="/m/holdings.php?m=MKL">Thomas Gayner - Markel Asset Management</a></td>
+   220	<td class="buy">Add 0.96%</td>
+   221	<td class="buy">11,400</td>
+   222	<td>0.01</td>
+   223	</tr><tr>
+   224	<td class="hist"><a href="/m/hist/hist.php?f=BRK&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   225	<td class="firm"><a href="/m/holdings.php?m=BRK">Warren Buffett - Berkshire Hathaway</a></td>
+   226	<td class="sell">Reduce 1.48%</td>
+   227	<td class="sell">14,732,452</td>
+   228	<td>0.45</td>
+   229	</tr><tr>
+   230	<td class="hist"><a href="/m/hist/hist.php?f=GR&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   231	<td class="firm"><a href="/m/holdings.php?m=GR">Thomas Russo - Gardner Russo & Gardner</a></td>
+   232	<td class="sell">Reduce 4.77%</td>
+   233	<td class="sell">400</td>
+   234	<td>0.00</td>
+   235	</tr><tr>
+   236	<td class="hist"><a href="/m/hist/hist.php?f=mc&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   237	<td class="firm"><a href="/m/holdings.php?m=mc">Lee Ainslie - Maverick Capital</a></td>
+   238	<td class="sell">Reduce 15.98%</td>
+   239	<td class="sell">39,808</td>
+   240	<td>0.04</td>
+   241	</tr><tr>
+   242	<td class="hist"><a href="/m/hist/hist.php?f=OFALX&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   243	<td class="firm"><a href="/m/holdings.php?m=OFALX">Robert Olstein - Olstein Capital Management</a></td>
+   244	<td class="sell">Reduce 20.83%</td>
+   245	<td class="sell">20,000</td>
+   246	<td>0.23</td>
+   247	</tr><tr>
+   248	<td class="hist"><a href="/m/hist/hist.php?f=WP&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   249	<td class="firm"><a href="/m/holdings.php?m=WP">David Rolfe - Wedgewood Partners</a></td>
+   250	<td class="sell">Reduce 34.76%</td>
+   251	<td class="sell">693,032</td>
+   252	<td>5.16</td>
+   253	</tr><tr class="q_chg"><td colspan="6"><b>Q3</b> &nbsp<b>2019</b></td></tr><tr>
+   254	<td class="hist"><a href="/m/hist/hist.php?f=OFALX&s=AAPL" title="Holding/activity history">&#8801</a></td>
+   255	<td class="firm"><a href="/m/holdings.php?m=OFALX">Robert Olstein - Olstein Capital Management</a></td>
+   256	<td class="buy">Add 20.00%</td>
+   257	<td class="buy">16,000</td>
+   258	<td>0.14</td>
+   259	</tr></tbody></table></div><div id="pages"><a href="/m/activity.php?sym=AAPL&typ=a&L=1">Prev </a><a class="sel" href="/m/activity.php?sym=AAPL&typ=a&L=1">1</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=2">2</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=3">3</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=4">4</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=5">5</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=6">6</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=7">7</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=8">8</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=9">9</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=10">10</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=11">11</a><a  href="/m/activity.php?sym=AAPL&typ=a&L=12">12</a><a href="/m/activity.php?sym=AAPL&typ=a&L=2"> Next</a></div><br/><script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+   260	<!-- activity_bot -->
+   261	<ins class="adsbygoogle"
+   262	     style="display:block"
+   263	     data-ad-client="ca-pub-5474305909373653"
+   264	     data-ad-slot="9962685449"
+   265	     data-ad-format="auto"></ins>
+   266	<script>
+   267	(adsbygoogle = window.adsbygoogle || []).push({});
+   268	</script><p class="fn">* "Hold Price" is the term we use to indicate the price at which the investors we track are comfortable owning a security. It is the closing price of the security as of the portfolio date (usually quarter end). We only provide this value when a security is owned by at least two investors. In the case of reporting dates being different, we calculate a weighted average price.
+   269	</p></div><link rel="stylesheet" href="/m/inc/footer.css" type="text/css" />
+   270	
+   271	<div class="cleared"></div>
+   272	
+   273	<div id="foot">
+   274	<a href="/m/home.php">Home</a>
+   275	<a href="/m/inc/help_notes.php">Help notes</a>
+   276	<a href="/m/contact.php">Contact</a>
+   277	<a href="/m/inc/tos.php">Terms of Service</a>
+   278	</div>
+   279	
+   280	
+   281	</div>
+   282	</body>
+   283	</html>

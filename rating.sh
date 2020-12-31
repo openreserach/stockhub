@@ -35,7 +35,7 @@ do
   [[ -z $color            && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'
 done
 earningsuprise=$(mycurl https://www.benzinga.com/stock/$1/earnings |egrep -o "positive\">[0-9.]+%|negative\">[-0-9.]+%" |cut -d'>' -f2|awk '{print ($1>0)?"+":"-"}'|tr -d '\n')  #'
-[[ $earningsuprise ]] && echo -e "Earning Suprise\t"$earningsuprise 
+[[ $earningsuprise ]] && echo -e "Earning Surprise\t"$earningsuprise 
 
 lastrating=$(mycurl https://www.benzinga.com/stock/$1/ratings |egrep -A 2 "Research Firm" |tail -n 1|cut -d'>' -f3,5,7,9,11 |sed 's/<\/td>/ /g' |cut -d'<' -f1)
 [[ $lastrating ]] && echo -e "Last Rating:\t"$lastrating
@@ -96,7 +96,7 @@ mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq ".tipranksStoc
 .portfolioHoldingData.analystConsensus.distribution.sell" |tr '\n' ','|sed 's/"//g' |\
 awk -F',' '{printf("TR Score:\t\t%d Bullish:%d%% Sentiment:%s\nPriceTarget:\t$%4.2f|Buy|Hold|Sell:%d|%d|%d\n"),$1,$2,$4,$3,$5,$6,$7}'
 
-echo "Techincal & Trend ----------------------------------"
+echo "Technical & Trend ----------------------------------"
 mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb="$1"&cobrand=&mode=stock" > tmp
 trendspotter=$(cat tmp |grep -i 'class="analysisTd' |grep -v Intermediate |egrep -o '>[A-Za-z]+ \([-0-9.]+\)' |tr '>' '|' |head -n 1 |cut -d'|' -f2)  #'
 candlestick=$(cat tmp  |egrep -A 2 CandleStick |egrep -o 'Recent CandleStick Analysis.+>[A-Za-z ]+|>Candle<.+borderTd">[A-Za-z ]+' |rev |cut -d'>' -f1 |rev |tr '\n' ' ')
