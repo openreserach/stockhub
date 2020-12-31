@@ -17,7 +17,7 @@ echo -e "Buffett Indicator:\t\t\t\t"$(mycurl https://www.gurufocus.com/stock-mar
 echo -e "VIX (current):\t\t\t\t\t"$(mycurl "https://www.cboe.com/tradable_products/vix/quote/" |jq -r ".data.quote")
 #ref:https://www.financialresearch.gov/financial-stress-index/
 echo -e "OFR Financial Stress Index:\t\t"$(mycurl "https://www.financialresearch.gov/financial-stress-index/data/fsi.json" | jq ".OFRFSI.data[-1]" |tail -2 |head -n 1|sed 's/ //g')
-echo -e "AAII Bullish|Neutral|Bearish:\t"$(mycurl -c cookie  'https://www.aaii.com/sentimentsurvey'  |egrep -A 2 "BULLISH|NEUTRAL|BEARISH" |egrep -o "[0-9.]+%<" |cut -d'<' -f1 |tr '\n' '|')
+echo -e "AAII Bullish|Neutral|Bearish:\t"$(mycurl -c tmp 'https://www.aaii.com/sentimentsurvey'  |egrep -A 2 "BULLISH|NEUTRAL|BEARISH" |egrep -o "[0-9.]+%<" |cut -d'<' -f1 |tr '\n' '|')
 #TODO:...
 rm -f *.csv tmp*
 
