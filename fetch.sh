@@ -1,17 +1,24 @@
 #!/bin/bash
 
 shopt -s expand_aliases
-alias mycurl="curl -s --max-time 3 -L -k --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
+alias mycurl="curl -s --max-time 3 -L --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
 
-echo "Market Overview=============="
-echo -e "S&P500 PE Average:\t\t"$(mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev)
-echo -e "FearGreed (0-100):\t\t"$(mycurl "https://money.cnn.com/data/fear-and-greed/" |egrep -o "Fear.+Greed Now: [0-9]+ [(A-Za-z ]+" |cut -d":" -f2 |sed "s/^ //g")")"
-mycurl "https://markets.cboe.com/us/options/market_statistics/daily/" |egrep -A 1 '>INDEX PUT/CALL RATIO<|>EQUITY PUT/CALL RATIO<' |egrep -o '>[0-9].[0-9]+<' |sed -e 's/>//g' -e 's/<//g' > tmp
-echo -e "Index  Put/Call Ratio:\t"$(head -n 1 tmp)
-echo -e "Equity Put/Call Ratio:\t"$(tail -n 1 tmp) 
-echo -e "Personal Saving Rate:\t"$(mycurl "https://fred.stlouisfed.org/series/PSAVERT" |egrep '20[0-9]+: <span class="series-meta-observation-value' |sed -e 's/: <span class="series-meta-observation-value">/ /g' |cut -d'<' -f1|sed 's/^[[:space:]]*//g')"%"   
-echo -e "Crash Index:\t\t\t"$(mycurl https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly |jq ".dataset_data.data[0]"  |tail -n +3 |head -n 1|sed -e 's/ //g' -e 's/,//g')
-#TODO:VIX, ...
+echo "Economic & Market Overview===================="
+echo -e "S&P500 PE Average:\t\t\t\t"$(mycurl https://www.multpl.com/ |egrep -o "Current S&P 500 PE Ratio is [0-9.]+" |rev |awk '{print $1}' |rev)
+echo -e "FearGreed (0-100):\t\t\t\t"$(mycurl "https://money.cnn.com/data/fear-and-greed/" |egrep -o "Fear.+Greed Now: [0-9]+ [(A-Za-z ]+" |cut -d":" -f2 |sed "s/^ //g")")"
+pagedump=$(mycurl "https://markets.cboe.com/us/options/market_statistics/daily/" |egrep -A 1 '>INDEX PUT/CALL RATIO<|>EQUITY PUT/CALL RATIO<' |egrep -o '>[0-9].[0-9]+<' |sed -e 's/>//g' -e 's/<//g')
+echo -e "Index  Put/Call Ratio:\t\t\t"$(echo $pagedump|awk '{print $1}')
+echo -e "Equity Put/Call Ratio:\t\t\t"$(echo $pagedump|awk '{print $2}') 
+echo -e "Personal Saving Rate:\t\t\t"$(mycurl "https://fred.stlouisfed.org/series/PSAVERT" |egrep '20[0-9]+: <span class="series-meta-observation-value' |sed -e 's/: <span class="series-meta-observation-value">/ /g' |cut -d'<' -f1|sed 's/^[[:space:]]*//g' |awk '{print $3}')"%"   
+echo -e "Crash Confidence Index:\t\t\t"$(mycurl https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly |jq ".dataset_data.data[0]"  |tail -n +3 |head -n 1|sed -e 's/ //g' -e 's/,//g')
+echo -e "Customer Securities Debit:\t\t"$(mycurl https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics |egrep -m 1 -B 50 '<\/tbody>' |egrep -A 50 "<th>Month/Year</th>" |tac |head -n 4|egrep "Debit Balances"  |cut -d'>' -f2 |cut -d'<' -f1) 
+#ref:https://www.gurufocus.com/stock-market-valuations.php
+echo -e "Buffett Indicator:\t\t\t\t"$(mycurl https://www.gurufocus.com/stock-market-valuations.php |egrep -o "GDP \(currently at <b>[0-9.]+%" |cut -d'>' -f2)
+echo -e "VIX (current):\t\t\t\t\t"$(mycurl "https://www.cboe.com/tradable_products/vix/quote/" |jq -r ".data.quote")
+#ref:https://www.financialresearch.gov/financial-stress-index/
+echo -e "OFR Financial Stress Index:\t\t"$(mycurl "https://www.financialresearch.gov/financial-stress-index/data/fsi.json" | jq ".OFRFSI.data[-1]" |tail -2 |head -n 1|sed 's/ //g')
+echo -e "AAII Bullish|Neutral|Bearish:\t"$(mycurl -c cookie  'https://www.aaii.com/sentimentsurvey'  |egrep -A 2 "BULLISH|NEUTRAL|BEARISH" |egrep -o "[0-9.]+%<" |cut -d'<' -f1 |tr '\n' '|')
+#TODO:...
 rm -f *.csv tmp*
 
 >ark.csv; ARK_CSV_URL="https://ark-funds.com/wp-content/fundsiteliterature/csv"; echo -n "."
@@ -76,33 +83,13 @@ do
 done
 
 >youtubers.csv
-mycurl https://finvid-recap.com/stock-moe-youtube-stock-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
+for profile in stock-moe-youtube-stock-profile jeremy-lefebvre-financial-education-youtube-stock-profile meet-kevin-paffrath-profile \
+george-perez-youtube-stock-profile profile-chris-sain-jr lets-talk-money-with-joseph-hogue-cfa-profile jack-spencer-investing-stock-profile
 do
-	echo "Stock-Moe,"$ticker >>youtubers.csv
-done
-mycurl https://finvid-recap.com/jeremy-lefebvre-financial-education-youtube-stock-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
-do
-	echo "Financial-Education,"$ticker >>youtubers.csv
-done
-mycurl https://finvid-recap.com/meet-kevin-paffrath-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
-do
-	echo "Kevin-Paffrath,"$ticker >>youtubers.csv
-done
-mycurl https://finvid-recap.com/george-perez-youtube-stock-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
-do
-	echo "George-Perez,"$ticker >>youtubers.csv
-done
-mycurl https://finvid-recap.com/profile-chris-sain-jr |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
-do
-	echo "Chris-Sain,"$ticker >>youtubers.csv
-done
-mycurl https://finvid-recap.com/lets-talk-money-with-joseph-hogue-cfa-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
-do
-	echo "Joseph-Hogue,"$ticker >>youtubers.csv
-done
-mycurl https://finvid-recap.com/jack-spencer-investing-stock-profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
-do
-	echo "Jack-Spencer,"$ticker >>youtubers.csv
+  mycurl https://finvid-recap.com/$profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
+  do
+	  echo $profile","$ticker >>youtubers.csv
+  done
 done
 
 [[  ! -z $(find . -name "*.csv" -type f -size 0) ]] && echo "Incomplete" || echo "Complete" 

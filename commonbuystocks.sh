@@ -1,8 +1,11 @@
 #!/bin/bash
 
+shopt -s expand_aliases
+alias mycurl="curl -s --max-time 3 -L --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
+
 export MARKETWATCH="marketwatchgames.csv"
 export FOOLPICKS="foolrecentpick.csv" 
-export GAMES_IN_RECENTDAY=30    #days 
+export GAMES_IN_RECENTDAY=7     #days 
 export FOOL_PLAYER_RATING=90.0  #percent
 export MARKET_CAP=1000000000    #$1B 
 
@@ -15,21 +18,26 @@ do #recent buy in last N days
   [ $transactionSec -gt $weekagoSec ] && echo $line |cut -d',' -f1 >> tmp  
 done #|sort |uniq >> tmp
 
-curl -s "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |cut -d',' -f1 |egrep -v '^$' |sort |uniq >> tmp #Barron's pick
+mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |cut -d',' -f1 |egrep -v '^$' |sort |uniq >> tmp  #Barron's pick
 cat $FOOLPICKS  |awk -F',' '{if( $4>'$FOOL_PLAYER_RATING'){print $1}}'|sort     >> tmp  #FOOL high rating players' picks
 cat seekingalphalong.csv  |sort >> tmp                                                  #recent(~2days) LONG recommendation by seekingalpha
 cat gurufocus.csv         |egrep "Buy:|Add:" |cut -d':' -f2 |tr ',' '\n'>>tmp           #Guru's recent Buy/Add
-cat whalewisdom*.csv      |cut -d',' -f1 |sort |uniq  >> tmp                            #13F recent filer's holdings
-cat ark.csv |egrep '^ARK' |cut -d',' -f2 |sort |uniq |egrep [A-Z]+ >> tmp               #all ARK* invenstment holdings
+cat whalewisdom-add.csv   |cut -d',' -f1 |sort |uniq  >> tmp                            #13F recent filers' new position
+cat whalewisdom-new.csv   |cut -d',' -f1 |sort |uniq  >> tmp                            #13F recent filer's add position
+cat ark.csv |egrep '^ARK' |cut -d',' -f2 |sort |uniq |egrep '[A-Z]+' >> tmp             #all ARK* invenstment holdings
 cat youtubers.csv         |cut -d',' -f2 |sort |uniq >> tmp                             #Distinct youtuber's picks
 
-echo "Sources Ticker    ETF   Weight"
-cat tmp |sort |uniq -c |sort -r -n | egrep -v '\s+1\s|\s+2\s'  |while read line
-do #picked ticker>1B cap size, from 3+ sources, and show ETF largest exposure (if available)
+echo "Sources Ticker    ETF   Weight" 
+cat tmp |sort |uniq -c |sort -nr | egrep -v '\s+1\s|\s+2\s' |while read line
+do #picked ETF/stock>1B cap size, from 3+ sources and show ETF largest exposure (if available)
   ticker=$(echo $line |awk '{print $2}')
-  etf_weight=$(curl -s "https://etfdb.com/stock/$ticker/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%" |cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')    
-  cap=$(curl -s  "https://www.tipranks.com/api/stocks/getData/?name=$ticker" |jq .marketCap)  
-  [[ $cap -gt $MARKET_CAP ]] && echo -e $line" "$etf_weight |awk '{printf("%5s%8s%8s%8s\n",$1,$2,$3,$4)}'
+  cap=$(mycurl "https://www.tipranks.com/api/stocks/getData/?name=$ticker" |jq .marketCap)
+  if [[ -z $cap ]]; then #ETF with null MarketCap
+    echo $line |awk '{printf("%5s%8s%8s\n",$1,$2,$2)}' #NO weight, i.e. 100% of ETF
+  elif [[ $cap -gt $MARKET_CAP ]]; then #Stock with market cap > $MARKET_CAP
+    etf_weight=$(mycurl "https://etfdb.com/stock/$ticker/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%" |cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')    
+    echo $line" "$etf_weight |awk '{printf("%5s%8s%8s%8s\n",$1,$2,$3,$4)}' 
+  fi  
 done
 
 #cat foolrecentpick.csv |awk -F',' '{if ($4>90.00) print $0}' |egrep -v '<20' |cut -d',' -f1 |sort |uniq -c |sort -nr |egrep -v '\s+1' 
