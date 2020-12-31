@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s expand_aliases
-alias mycurl='curl -s --max-time 10 -L --ipv4 -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0"'
+alias mycurl='curl -s --max-time 3 -L -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" --ipv4 --http2 --compressed '
 set -- $(echo $1 |tr [:lower:] [:upper:]) #reset ticker to upper case
 [[ ! $FINNHUB_KEY ]] && FINNHUB_KEY=$(mycurl $REPLIT_DB_URL/FINNHUB_KEY) #if running on repl.it, set KEY by: curl $REPLIT_DB_URL -d 'FINNHUB_KEY=[value]'
 [[ ! $FINNHUB_KEY ]] && { echo "FINNHUB_KEY NOT defined (neither by system variable nor in repl.it key-value store"; exit; }
@@ -35,7 +35,10 @@ do
   [[ -z $color            && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'
 done
 earningsuprise=$(mycurl https://www.benzinga.com/stock/$1/earnings |egrep -o "positive\">[0-9.]+%|negative\">[-0-9.]+%" |cut -d'>' -f2|awk '{print ($1>0)?"+":"-"}'|tr -d '\n')  #'
-[[ $earningsuprise ]] && echo -e "Earning Surprise\t"$earningsuprise 
+[[ $earningsuprise ]] && echo -e "Earn Surprise:\t"$earningsuprise 
+
+consensusrevenue=$(mycurl -H 'X-Requested-With: XMLHttpRequest' "https://seekingalpha.com/symbol/$1/earnings/estimates_data?data_type=revenue&unit=earning_estimates" |jq  '[.annual[]| {fiscalYear: .fiscalYear, yoy: .yoy}|select (.fiscalYear>='"$(date +%Y)"')]|sort_by(.fiscalYear)[0:4]|.[]|.fiscalYear,(.yoy|tostring[0:6]+"%")' |tr '\n' ' ')
+[[ $consensusrevenue ]] && echo -e "Revenue Trend:\t"$consensusrevenue |sed -e 's/"//g' -e 's/%/%|/g'
 
 lastrating=$(mycurl https://www.benzinga.com/stock/$1/ratings |egrep -A 2 "Research Firm" |tail -n 1|cut -d'>' -f3,5,7,9,11 |sed 's/<\/td>/ /g' |cut -d'<' -f1)
 [[ $lastrating ]] && echo -e "Last Rating:\t"$lastrating
