@@ -1,11 +1,11 @@
 #!/bin/bash
 
 shopt -s expand_aliases
-alias mycurl="curl -s --max-time 3 -L --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
+alias mycurl="curl -s --max-time 5 -L -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0' --ipv4 --http2 --compressed"
 
 export MARKETWATCH="marketwatchgames.csv"
 export FOOLPICKS="foolrecentpick.csv" 
-export GAMES_IN_RECENTDAY=7     #days 
+export GAMES_IN_RECENTDAY=14    #days 
 export FOOL_PLAYER_RATING=90.0  #percent
 export MARKET_CAP=1000000000    #$1B 
 
