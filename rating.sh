@@ -102,24 +102,19 @@ mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq ".tipranksStoc
 awk -F',' '{printf("TR Score:\t\t%d Bullish:%d%% Sentiment:%s\nPriceTarget:\t$%4.2f|Buy|Hold|Sell:%d|%d|%d\n"),$1,$2,$4,$3,$5,$6,$7}'
 
 echo "Technical & Trend ----------------------------------"
-mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb="$1"&cobrand=&mode=stock" > tmp
-trendspotter=$(cat tmp |grep -i 'class="analysisTd' |grep -v Intermediate |egrep -o '>[A-Za-z]+ \([-0-9.]+\)' |tr '>' '|' |head -n 1 |cut -d'|' -f2)  #'
-candlestick=$(cat tmp  |egrep -A 2 CandleStick |egrep -o 'Recent CandleStick Analysis.+>[A-Za-z ]+|>Candle<.+borderTd">[A-Za-z ]+' |rev |cut -d'>' -f1 |rev |tr '\n' ' ')
-[[ $trendspotter ]] && echo -e "Overall Trend:\t"$trendspotter
-[[ $candlestick ]] && echo -e "Candle Stick:\t"$candlestick
-
+candlestick=$(mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb=$1" |egrep 'Recent CandleStick Analysis' |egrep -o '>[A-Za-z ]*(Bullish|Bearish|Neutral)<' |sed -e 's/>//g' -e 's/<//g')  #'
+[[ $candlestick ]] && echo -e "CandleStick:\t"$candlestick
 barchart=$(mycurl "https://www.barchart.com/stocks/quotes/$1/"  |egrep -o 'buy-color">[A-Za-z ]+</a>' |cut -d'>' -f2 |cut -d'<' -f1 |sed 's/^ \+//g')
-[[ $barchart ]] && echo -e "Chart Signal:\t"$barchart
+[[ $barchart ]] && echo -e "BarChart:\t\t"$barchart
+signalpattern=$(mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker=$1" |egrep 'MainContent_LastSignal\"|MainContent_LastPattern\"' |cut -d'>' -f2- |cut -d'<' -f1 |tr '\n' '|')
+[[ $signalpattern  ]] && echo -e "USBull Signal:\t"$signalpattern
 
-#TA patterns
-signal=$(mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker="$1 |egrep "MainContent_LastSignal"  |egrep -o ">[A-Z ]+</font>" |cut -d'<' -f1|cut -d'>' -f2)
-pattern=$(mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker="$1 |egrep "MainContent_LastPattern" |cut -d'>' -f3 |cut -d'<' -f1  |sed 's/NO PATTERN//g' |tr -d '\r\n')
-[[ $single  ]] && echo -e "USBull Signal\t"$signal
-[[ $pattern ]] && echo -e "USBull Pattern\t"$pattern
-pretiming=$(mycurl "https://www.pretiming.com/search?q=$1" |egrep -A 5  -m1 "Recommended Positions"  |tail -n 1 |egrep -o -i "long-bullish|long-bearish|short-bullish|short-bearish")
-[[ $pretiming ]] && echo -e "PreTiming TA:\t"$pretiming
-willr=$(mycurl "https://www.alphavantage.co/query?function=WILLR&symbol=$1&interval=daily&time_period=10&apikey=$ALPHAVANTAGE_KEY" |jq -r "[.[]][1][].WILLR" |head -n 1)
-echo $willr |awk '{if ($1<-80.0) print "Willim %R:\t\tOversold"}'
+#ref: https://www.investopedia.com/terms/w/williamsr.asp
+willr=$(mycurl "https://www.alphavantage.co/query?function=WILLR&symbol=$1&interval=daily&time_period=10&apikey=$ALPHAVANTAGE_KEY" |jq -r "[[.[]][1][].WILLR]|first")
+echo $willr |awk '{if ($1<-80.0) print "William %R:\t\tOverSold"; if ($1>-20.0) print "William %R:\t\tOverBought"}'
+
+#ref: https://www.investopedia.com/terms/m/macd.asp
+macdcross=$(mycurl "https://www.alphavantage.co/query?function=MACD&symbol=$1&interval=daily&series_type=open&apikey=$ALPHAVANTAGE_KEY"|jq -r "[[.[]][1][]|.MACD_Hist]|.[0,1]" |tr '\n' ' ')  echo $macdcross |awk '{if($1>0 && $2<0) print "MACD:\ttGolden Cross"; if($1<0 && $2>0) print "MACD:\t\tDeath Cross"}'
 
 shortinterest=$(mycurl https://www.highshortinterest.com/all/ |egrep -o "q?s=[A-Z\.]+" |cut -d'=' -f2 |egrep -i $1)
 [[ $shortinterest ]] && echo -e "Short Interest:\tHigh"
