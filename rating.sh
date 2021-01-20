@@ -27,7 +27,7 @@ updown=$(echo $pagedump |sed 's/^M/\n/g' |sed 's/<\/tr>/\n/g' |egrep -o "Change<
 echo "$"$price $updown `date +%x`
 
 echo "Fundamentals--------------------------------"
-for key in  'Market Cap' 'Income' 'P/E' 'Forward P/E' 'P/S' 'PEG' 'P/FCF' 'Current Ratio' 'Gross Margin' 'ROE' 'SMA20' 'SMA50'  \
+for key in  'Market Cap' 'Sales' 'Income' 'P/E' 'Forward P/E' 'P/S' 'P/B' 'PEG' 'P/FCF' 'Current Ratio' 'Profit Margin' 'ROE' 'SMA20' 'SMA50' 'SMA200'  \
             'Target Price' 'Recom' 'Insider Own' 'Insider Trans' 'Inst Own' 'Inst Trans' 'Dividend %' 'Rel Volume' 'Earnings'
 do	
   color=$(echo $pagedump |sed 's/^M/\n/g' |egrep -o ">$key<.+" |cut -c1-120 |egrep -o 'is-red|is-green')  
@@ -36,23 +36,19 @@ do
   [[ $color == 'is-green' && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'  | awk  '{ print "\033[32m"$0"\033[0m";}'
   [[ -z $color            && $val ]] && echo "$key:$val" |awk -F':' '{printf("%-15s\t%-s\n"),$1,$2}'
 done
+>tmp
 earningsuprise=$(mycurl https://www.benzinga.com/stock/$1/earnings |egrep -o "positive\">[0-9.]+%|negative\">[-0-9.]+%" |cut -d'>' -f2|awk '{print ($1>0)?"+":"-"}'|tr -d '\n')  #'
-[[ $earningsuprise ]] && echo -e "Earn Surprise:\t"$earningsuprise 
-
+[[ $earningsuprise ]] && echo -e "Earn Surprise:\t"$earningsuprise >> tmp
 consensusrevenue=$(mycurl -H 'X-Requested-With: XMLHttpRequest' "https://seekingalpha.com/symbol/$1/earnings/estimates_data?data_type=revenue&unit=earning_estimates" |jq  '[.annual[]| {fiscalYear: .fiscalYear, yoy: .yoy}|select (.fiscalYear>='$(date +%Y)')]|sort_by(.fiscalYear)[0:4]|.[]|.fiscalYear,(.yoy|tostring[0:6]+"%")' |tr '\n' ' ') 
-[[ $consensusrevenue ]] && echo -e "Revenue Trend:\t"$consensusrevenue |sed -e 's/"//g' -e 's/%/%|/g'
-
+[[ $consensusrevenue ]] && echo -e "Revenue Trend:\t"$consensusrevenue |sed -e 's/"//g' -e 's/%/%|/g' >> tmp
 lastrating=$(mycurl https://www.benzinga.com/stock/$1/ratings |egrep -A 2 "Research Firm" |tail -n 1|cut -d'>' -f3,5,7,9,11 |sed 's/<\/td>/ /g' |cut -d'<' -f1)
-[[ $lastrating ]] && echo -e "Last Rating:\t"$lastrating
-
-mycurl https://finviz.com/insidertrading.ashx |sed 's/tr/\n/g' |egrep -w "t=$1" |egrep -o ">Buy<|>Sale<|>Option Exercise<" |sed -e 's/>//g' -e 's/<//g' |while read buysell
-do
-  echo -e "Insider:\t\t$buysell"
-done
-
+[[ $lastrating ]] && echo -e "Last Rating:\t"$lastrating >> tmp
+insider=$(mycurl "https://finviz.com/quote.ashx?t=$1"|sed 's/<tr/\n/g' |egrep -m 1 'center\">Sale<|center\">Buy<'  |egrep -o ">.[^<][^>]+</td>" |sed -e 's/<\/td>//g' -e 's/>//g' |cat -n |egrep '^\s+(2|3|4|5|7)' |cut -c8-|tr '\n' '|') #most recent buy/sale'
+[[ $insider ]] && echo -e "Insider:\t\t"$insider >> tmp
 etf=$(mycurl "https://etfdb.com/stock/$1/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%"\
       |cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')
-[[ $etf ]] && echo -e "ETF/Weight:\t\t"$etf #|awk '{printf("ETF/Weight\t\t%-s/%2.2f%%\n",$1,$2)}' 
+[[ $etf ]] && echo -e "ETF/Weight:\t\t"$etf #|awk '{printf("ETF/Weight\t\t%-s/%2.2f%%\n",$1,$2)}' >> tmp
+cat tmp
 
 echo "Valuations------------------------------------"
 dcf=$(mycurl "https://www.gurufocus.com/stock/$1/dcf" |egrep -o ",iv_dcEarning:[0-9.]+|,iv_dcf:[0-9.]+" |cut -d':' -f2 |tr '\n' '/' |sed 's/\/$//g')
@@ -116,6 +112,9 @@ echo $willr |awk '{if ($1<-80.0) print "William %R:\t\tOverSold"; if ($1>-20.0) 
 #ref: https://www.investopedia.com/terms/m/macd.asp
 macdcross=$(mycurl "https://www.alphavantage.co/query?function=MACD&symbol=$1&interval=daily&series_type=open&apikey=$ALPHAVANTAGE_KEY"|jq -r "[[.[]][1][]|.MACD_Hist]|.[0,1]" |tr '\n' ' ')  echo $macdcross |awk '{if($1>0 && $2<0) print "MACD:\ttGolden Cross"; if($1<0 && $2>0) print "MACD:\t\tDeath Cross"}'
 
+rsi=$(mycurl "https://www.alphavantage.co/query?function=RSI&symbol=$1&interval=weekly&time_period=10&series_type=open&apikey=$ALPHAVANTAGE_KEY"| jq -r '[[.[]][1][].RSI]|first')
+[[ $rsi ]] && echo -e "RSI(10):\t\t"$rsi
+
 shortinterest=$(mycurl https://www.highshortinterest.com/all/ |egrep -o "q?s=[A-Z\.]+" |cut -d'=' -f2 |egrep -i $1)
 [[ $shortinterest ]] && echo -e "Short Interest:\tHigh"
 
@@ -170,6 +169,7 @@ mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '
 do echo "Barron's Picks:"$barron"------------------------------------------------------------"; done
 
 echo "What people do==================================================================================================="
+#Fool players' portofolio
 mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 30 "player/\w+" |egrep -v "<del>|[[:space:]]+$" |egrep -A 2 "\w+.asp|numeric|date" \
   |egrep -v '<td|td>|<a|a>|^\s+$|--'|sed 's/[[:space:]]//g'|tr '\n' ',' |sed -E -e 's/-[0-9]+\.[0-9]+%,/\n/g' -e 's/\+[0-9]+\.[0-9]+%,/\n/g' -e 's/&lt;/</g'  |head -n 5 > tmp
 [[ -s tmp ]] && echo "Fool Player-------------------Rating--MM/DD/YYYY--Time--StartPrice--URL---------------";
@@ -187,7 +187,8 @@ do
 done
 [[ -s tmp ]] && { echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp; }
 
-if  egrep -wq "$1" $ARK; then #Ark Investment daily change tracked by arktrack.com    
+#Ark Investment daily change tracked by arktrack.com    
+if  egrep -wq "$1" $ARK; then 
   echo "ARK :Significant(>1%) change(+/-/0) in the fund in last 30 days----------------------------"
   for ark in ARKW ARKK ARKQ ARKG ARKF
   do #show percent-change for last 30 trading days, the rightmost being the most recent change
@@ -216,3 +217,7 @@ if [[ $last && $head && $tail ]]; then
     echo $last","$buysell|awk -F',' '{printf("%-8s%-62s%-15s\n",$1,$2,$3)}'
   done
 fi
+
+#Youtubers' portofolios
+youtube=$(egrep ",$1$" youtubers.csv) 
+[[ $youtube ]] && { echo "Youtubers' Portofolios---------------------------------------------------------------"; echo $youtube | awk '{print "Youtubers:"$1}'; }
