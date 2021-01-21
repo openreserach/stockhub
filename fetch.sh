@@ -86,14 +86,4 @@ do
   done
 done
 
->youtubers.csv
-for profile in stock-moe-youtube-stock-profile jeremy-lefebvre-financial-education-youtube-stock-profile meet-kevin-paffrath-profile \
-george-perez-youtube-stock-profile profile-chris-sain-jr lets-talk-money-with-joseph-hogue-cfa-profile jack-spencer-investing-stock-profile
-do
-  mycurl https://finvid-recap.com/$profile |egrep -o "symbol&quot;:&quot;[A-Z]+&quot" |cut -d';' -f3- |cut -d'&' -f1 |while read ticker
-  do
-	  echo $profile","$ticker >>youtubers.csv
-  done
-done
-
 [[  ! -z $(find . -name "*.csv" -type f -size 0) ]] && echo "Incomplete" || echo "Complete" 

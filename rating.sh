@@ -217,7 +217,3 @@ if [[ $last && $head && $tail ]]; then
     echo $last","$buysell|awk -F',' '{printf("%-8s%-62s%-15s\n",$1,$2,$3)}'
   done
 fi
-
-#Youtubers' portofolios
-youtube=$(egrep ",$1$" youtubers.csv) 
-[[ $youtube ]] && { echo "Youtubers' Portofolios---------------------------------------------------------------"; echo $youtube | awk '{print "Youtubers:"$1}'; }
