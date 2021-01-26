@@ -86,4 +86,13 @@ do
   done
 done
 
+>youtubers.csv
+for youtuber in graham-stephan stock-moe jeremy-lefebvre-financial-education meet-kevin-paffrath george-perez chris-sain-jr \                                                                                              lets-talk-money-with-joseph-hogue-cfa jack-spencer-investing darcy-macdonald kenan-grace beatthebush-francis
+do
+  mycurl  "https://finvid-recap.com/profiles/$youtuber" |egrep -o 'data-opts=.+' |cut -d';' -f4 |cut -d'&' -f1 |while read holding
+    do
+      echo $youtuber,$holding >> youtubers.csv
+    done
+done
+
 [[  ! -z $(find . -name "*.csv" -type f -size 0) ]] && echo "Incomplete" || echo "Complete" 

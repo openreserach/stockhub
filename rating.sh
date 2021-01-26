@@ -90,12 +90,16 @@ motelyfool=$(mycurl https://caps.fool.com/Ticker/$1.aspx |egrep "capsStarRating"
 [[ $motelyfool ]] && echo -e "MotelyFool:\t\t"$motelyfool
 
 #TipRanks Score, price target and ratings
+latestrating=$(mycurl "https://www.tipranks.com/api/liveFeeds/GetLatestAnalystRatings/?top=300&includeRatingsPreview=buy,sell,hold"|jq -r '.analystsPreview[]|select (.stockTicker=="'$1'")|.rating') #'
+[[ $latestrating ]] && echo -e "TR Latest:\t\t"$latestrating
 mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq ".tipranksStockScore.score,.bloggerSentiment.bullish,.portfolioHoldingData.priceTarget, \
 .portfolioHoldingData.analystConsensus.consensus,\
 .portfolioHoldingData.analystConsensus.distribution.buy, \
 .portfolioHoldingData.analystConsensus.distribution.hold, \
 .portfolioHoldingData.analystConsensus.distribution.sell" |tr '\n' ','|sed 's/"//g' |\
 awk -F',' '{printf("TR Score:\t\t%d Bullish:%d%% Sentiment:%s\nPriceTarget:\t$%4.2f|Buy|Hold|Sell:%d|%d|%d\n"),$1,$2,$4,$3,$5,$6,$7}'
+
+
 
 echo "Technical & Trend ----------------------------------"
 candlestick=$(mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb=$1" |egrep 'Recent CandleStick Analysis' |egrep -o '>[A-Za-z ]*(Bullish|Bearish|Neutral)<' |sed -e 's/>//g' -e 's/<//g')  #'
