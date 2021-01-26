@@ -26,6 +26,7 @@ cat whalewisdom-add.csv   |cut -d',' -f1 |sort |uniq  >> tmp                    
 cat whalewisdom-new.csv   |cut -d',' -f1 |sort |uniq  >> tmp                            #13F recent filer's add position
 cat ark.csv |egrep '^ARK' |cut -d',' -f2 |sort |uniq |egrep '[A-Z]+' >> tmp             #all ARK* invenstment holdings
 cat youtubers.csv         |cut -d',' -f2 |sort |uniq >> tmp                             #Distinct youtuber's picks
+cat tipranks.csv          |cut -d',' -f2 |sort |uniq >> tmp 
 
 echo "Sources Ticker    ETF   Weight" 
 cat tmp |sort |uniq -c |sort -nr | egrep -v '\s+1\s|\s+2\s' |while read line

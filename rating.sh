@@ -99,7 +99,9 @@ mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq ".tipranksStoc
 .portfolioHoldingData.analystConsensus.distribution.sell" |tr '\n' ','|sed 's/"//g' |\
 awk -F',' '{printf("TR Score:\t\t%d Bullish:%d%% Sentiment:%s\nPriceTarget:\t$%4.2f|Buy|Hold|Sell:%d|%d|%d\n"),$1,$2,$4,$3,$5,$6,$7}'
 
-
+#WallStreetBets mentioned in 24 hours (as a 'hot' index)
+wsb_mentions=$(mycurl 'https://wsbsynth.com/ajax/get_table.php' |jq -r '.data_values[] |select (.symbol=="'$1'")|.mentions') #'
+[[ $wsb_mentions ]] && echo -e "WSB mentions:\t"$wsb_mentions
 
 echo "Technical & Trend ----------------------------------"
 candlestick=$(mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb=$1" |egrep 'Recent CandleStick Analysis' |egrep -o '>[A-Za-z ]*(Bullish|Bearish|Neutral)<' |sed -e 's/>//g' -e 's/<//g')  #'
@@ -221,3 +223,8 @@ if [[ $last && $head && $tail ]]; then
     echo $last","$buysell|awk -F',' '{printf("%-8s%-62s%-15s\n",$1,$2,$3)}'
   done
 fi
+
+egrep -w $1 tipranks.csv > tmp
+[[ -s tmp ]] && echo "TipRanks Top Public Portfolio Holdings----------------------"; cat tmp
+egrep -w $1 youtubers.csv > tmp
+[[ -s tmp ]] && echo "Youtubers' Holdings----------------------------------------";  cat tmp

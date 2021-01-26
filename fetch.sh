@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s expand_aliases
-alias mycurl="curl -s --max-time 3 -L -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0' --ipv4 --http2 --compressed"
+alias mycurl="curl -s --max-time 10 -L -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0' --ipv4 --http2 --compressed"
 
 echo "Economic & Market Overview===================="
 #ref: https://en.wikipedia.org/wiki/Price%E2%80%93earnings_ratio#Historical_P/E_ratios_for_the_U.S._stock_market
@@ -87,12 +87,23 @@ do
 done
 
 >youtubers.csv
-for youtuber in graham-stephan stock-moe jeremy-lefebvre-financial-education meet-kevin-paffrath george-perez chris-sain-jr \                                                                                              lets-talk-money-with-joseph-hogue-cfa jack-spencer-investing darcy-macdonald kenan-grace beatthebush-francis
+for youtuber in graham-stephan stock-moe jeremy-lefebvre-financial-education meet-kevin-paffrath george-perez chris-sain-jr \                                                                                    lets-talk-money-with-joseph-hogue-cfa jack-spencer-investing darcy-macdonald kenan-grace beatthebush-francis
 do
+  echo -n "."
   mycurl  "https://finvid-recap.com/profiles/$youtuber" |egrep -o 'data-opts=.+' |cut -d';' -f4 |cut -d'&' -f1 |while read holding
     do
       echo $youtuber,$holding >> youtubers.csv
     done
+done
+
+>tipranks.csv
+mycurl "https://www.tipranks.com/api/experts/getTop25Experts/?expertType=10&numExperts=100" |jq -r '.[] | .expertPortfolioId' |while read id
+do #TipRank TOP 100 *Public* Portfolio
+  echo -n "."
+	mycurl "https://www.tipranks.com/api/publicportfolio/getportfoliobyid/?id=$id" |jq -r '.holdings[] |select (.weight >= 0.05) | .ticker ' |while read ticker
+	do #with holding weight > 5%
+		echo "https://www.tipranks.com/investors/"$id,$ticker >> tipranks.csv 
+  done
 done
 
 [[  ! -z $(find . -name "*.csv" -type f -size 0) ]] && echo "Incomplete" || echo "Complete" 
