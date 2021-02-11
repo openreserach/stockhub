@@ -1,3 +1,2 @@
 language = "bash"
-alias mycurl="curl -s --max-time 3 -L -k --ipv4 -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0'"
-run = ""./fe
+run = "fetch.sh"

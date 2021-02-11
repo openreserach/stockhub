@@ -147,10 +147,10 @@ done
 pagedump=$(mycurl https://api.stocktwits.com/api/2/streams/symbol/$1.json)
 echo $pagedump |jq '.messages[]|select(.entities.sentiment.basic=="Bullish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]' 2>/dev/null\
   |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
-[[ -s tmp ]] && { echo "Stockwits Bull Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp; }
+[[ -s tmp ]] &&  echo "Stockwits Bull Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp; 
 echo $pagedump |jq '.messages[]|select(.entities.sentiment.basic=="Bearish") | [.created_at, .user.username, .user.ideas, .user.followers, .user.like_count]' 2>/dev/null \
   |tr -d '\n' |sed 's/]/\n/g' |sed -e 's/\[//g' -e 's/"//g' -e 's/ //g' |awk -F',' '{printf "%s %-25s %8d %10d %8d\n",$1,$2,$3,$4,$5}' > tmp
-[[ -s tmp ]] && { echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp; }
+[[ -s tmp ]] &&  echo "Stockwits Bear Time--Investor--------------------#Ideas--#Followers--#Likes"; cat tmp; 
 
 mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq '.experts[]|select (.ratings[].date>="'$(date -d "-30 days" "+%Y-%m-%d")'") |.ratings[0].url,.name,.rankings[0].stars,.rankings[0].avgReturn,.ratings[0].timestamp,.ratings[0].quote.title'|sed 's/"//g' |tr '\n' ';' |sed 's/http/\nhttp/g' |egrep -v '^$' > tmp
 [[ -s tmp ]] && echo "Expert Name--------------Rating-Return%-YYYY-MM-DD-----URL---------------------------Title------------------"
@@ -162,7 +162,18 @@ do #Tipranks Expert's Rating(0-5), Return%(per rating), tiny-url-to-access-artic
 done
 
 mycurl "https://www.youtube.com/results?search_query=$1+stock&sp=CAI%253D" |egrep -o 'title\":{\"runs\":\[{\"text\":\".[^}]+|[0-9] (minutes|hour|hours|day|days) ago|watch\?v=.[^"]+' |uniq |sed 's/title":{"runs":\[{"text":"//g' |tac |egrep -A 100 'watch\?v=' |tr '\n' ',' |sed -e 's/",/\n/g' -e 's/watch?v=//g' |tac |egrep " ago" |awk  '{print "https://youtu.be/"$0}' > tmp
-[[ -s tmp ]] && { echo "Youtuber---------------------------------------------------------------------------------------------------------"; cat tmp; }
+[[ -s tmp ]] && echo "Youtubers---------------------------------------------------------------------------------------------------------"; cat tmp; 
+
+utc7daysago=$(date --date="30 days ago" +%s)
+>tmp
+for subreddit in wallstreetbets stocks trakstocks SecurityAnalysis
+do
+  mycurl "https://www.reddit.com/r/"$subreddit"/search.json?q="$1"&restrict_sr=on&sort=new" | jq -r '.data.children[].data 
+    |select(.created_utc>'$utc7daysago')  
+    |select(.url | contains("comments"))  
+    |select(.selftext|test ("'$1'"))|.url' >> tmp
+done
+[[ -s tmp ]] && echo "Redditers---------------------------------------------------------------------------------------------------------"; cat tmp; 
 
 #SeekingAlpha Long ideas
 url=$(mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |egrep -o 'a-title\" href=\".[^"]+|\/symbol\/[A-Z]+' |egrep -B 1 -w "$1$" |head -n 1|cut -d'"' -f3)
@@ -174,6 +185,7 @@ echo $(mycurl "http://tinyurl.com/api-create.php?url="https://seekingalpha.com/"
 mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron
 do echo "Barron's Picks:"$barron"------------------------------------------------------------"; done
 
+echo 
 echo "What people do==================================================================================================="
 #Fool players' portofolio
 mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 30 "player/\w+" |egrep -v "<del>|[[:space:]]+$" |egrep -A 2 "\w+.asp|numeric|date" \
@@ -191,7 +203,7 @@ do
   tinyurl=$(mycurl "http://tinyurl.com/api-create.php?url=$url")  
   [ $transactionSec -gt $weekagoSec ] && echo $line,$tinyurl |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$6}' >> tmp
 done
-[[ -s tmp ]] && { echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp; }
+[[ -s tmp ]] && echo "Buy/Short---Date------#Rank----MarketWatch Game---------------------------"; cat tmp; 
 
 #Ark Investment daily change tracked by arktrack.com    
 if  egrep -wq "$1" $ARK; then 

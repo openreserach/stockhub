@@ -40,6 +40,12 @@ mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |grep bull |egrep -o "\
 #Gurufocus latest picks
 mycurl https://www.gurufocus.com/guru/latest-picks |egrep '^Buy:|^Add:|Sell:|^Reduce:|^[A-Z]{1,5}$' |egrep -v "USA|RSS|FAQ|API|ETF" |egrep  '^[A-Z]+' |tr '\n' ',' |sed -e's/,Buy:/\nBuy:/g' -e 's/,Reduce:/\nReduce:/g' -e 's/,Sell:/\nSell:/g' -e 's/,Add:/\nAdd:/g' |sed 's/:,/:/g' |egrep -v ':$' > gurufocus.csv
 
+#Barron's pick
+mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -v '^$' > barrons.csv
+
+#Insider recent buys
+mycurl "https://finviz.com/insidertrading.ashx?tc=1" |egrep "screener.ashx\?" |cut -d'=' -f5- |cut -d'"' -f1 |tr ',' '\n' > insiderbuy.csv
+
 #MotleyFool players recent trading 
 >foolrecentpick.csv
 seq 0 49 |while read pagenum 
@@ -100,10 +106,12 @@ done
 mycurl "https://www.tipranks.com/api/experts/getTop25Experts/?expertType=10&numExperts=100" |jq -r '.[] | .expertPortfolioId' |while read id
 do #TipRank TOP 100 *Public* Portfolio
   echo -n "."
-	mycurl "https://www.tipranks.com/api/publicportfolio/getportfoliobyid/?id=$id" |jq -r '.holdings[] |select (.weight >= 0.05) | .ticker ' |while read ticker
+	mycurl "https://www.tipranks.com/api/publicportfolio/getportfoliobyid/?id=$id" |jq -r '.holdings[] |select (.weight >= 0.01) | .ticker ' |while read ticker
 	do #with holding weight > 5%
 		echo "https://www.tipranks.com/investors/"$id,$ticker >> tipranks.csv 
   done
 done
 
 [[  ! -z $(find . -name "*.csv" -type f -size 0) ]] && echo "Incomplete" || echo "Complete" 
+
+./commonbuystocks.sh
