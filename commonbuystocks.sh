@@ -32,17 +32,12 @@ cat insiderbuy.csv                       |sort |uniq >> tmp
 
 echo "Sources Ticker    ETF   Weight"  >tmpcommon
 cat tmp |sort |uniq -c |sort -nr | egrep -v '\s+1\s|\s+2\s' |while read line
-do #picked ETF/stock>1B cap size, from 3+ sources and show ETF largest exposure (if available)  
-  echo -n "."
+do
+  count=$(echo $line |awk '{print $1}')
   ticker=$(echo $line |awk '{print $2}')
-  cap=$(mycurl "https://www.tipranks.com/api/stocks/getData/?name=$ticker" |jq .marketCap)
-  if [[ -z $cap ]]; then #ETF with null MarketCap
-    echo $line |awk '{printf("%5s%8s%8s\n",$1,$2,$2)}'  >> tmpcommon #NO weight, i.e. 100% of ETF
-  elif [[ $cap -gt $MARKET_CAP ]]; then #Stock with market cap > $MARKET_CAP
-    etf_weight=$(mycurl "https://etfdb.com/stock/$ticker/"|egrep Ticker|egrep Weighting|head -n 1 |egrep -o "href=\"/etf/[A-Z]+/\">[A-Z]+<|Weighting\">[0-9]+\.[0-9]+%" |cut -d'>' -f2|sed 's/<//g' |tr '\n' ' ')    
-    echo $line" "$etf_weight |awk '{printf("%5s%8s%8s%8s\n",$1,$2,$3,$4)}' >> tmpcommon
-  fi  
+  etf_weight=$(egrep -w "^$ticker" stock-etf-weight.lst) 
+  [[ $etf_weight ]] && echo $count" "$etf_weight |awk '{printf("%5s%8s%8s%8s\n",$1,$2,$3,$4)}' >> tmpcommon 
 done
+
 #To show ETF with most common picks
 cat tmpcommon |awk '{print $3}'|egrep -v '^$'|sort|uniq -c|sort -nr | egrep -v '\s+1\s|\s+2\s|ARK' 
-

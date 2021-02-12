@@ -164,14 +164,14 @@ done
 mycurl "https://www.youtube.com/results?search_query=$1+stock&sp=CAI%253D" |egrep -o 'title\":{\"runs\":\[{\"text\":\".[^}]+|[0-9] (minutes|hour|hours|day|days) ago|watch\?v=.[^"]+' |uniq |sed 's/title":{"runs":\[{"text":"//g' |tac |egrep -A 100 'watch\?v=' |tr '\n' ',' |sed -e 's/",/\n/g' -e 's/watch?v=//g' |tac |egrep " ago" |awk  '{print "https://youtu.be/"$0}' > tmp
 [[ -s tmp ]] && echo "Youtubers---------------------------------------------------------------------------------------------------------"; cat tmp; 
 
-utc7daysago=$(date --date="30 days ago" +%s)
+utc7daysago=$(date --date="7 days ago" +%s)
 >tmp
 for subreddit in wallstreetbets stocks trakstocks SecurityAnalysis
 do
   mycurl "https://www.reddit.com/r/"$subreddit"/search.json?q="$1"&restrict_sr=on&sort=new" | jq -r '.data.children[].data 
     |select(.created_utc>'$utc7daysago')  
     |select(.url | contains("comments"))  
-    |select(.selftext|test ("'$1'"))|.url' >> tmp
+    |select(.selftext|test (" '$1' "))|.url' >> tmp
 done
 [[ -s tmp ]] && echo "Redditers---------------------------------------------------------------------------------------------------------"; cat tmp; 
 
