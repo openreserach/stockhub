@@ -8,8 +8,7 @@ from pandas_datareader import data as pdr
 all_symbols = pdr.get_nasdaq_symbols()                       
 nyse_nasdaq=all_symbols[(all_symbols['Listing Exchange'].isin(['A', 'N'])) &  #A: NYSE N:NASDAQ 
                         (all_symbols['ETF'] == False) &  #NOT ETF
-                        (all_symbols.index.str.match(r'^[A-Z]{1,4}$'))  & #exclude .U/-A/-B/.. tickers
-                        (all_symbols.index.str.contains('^CB'))
+                        (all_symbols.index.str.match(r'^[A-Z]{1,4}$')) #exclude .U/-A/-B/.. tickers                        
                         ] 
 
 tickers=nyse_nasdaq.index.tolist()[0:100] #test with short list without tor

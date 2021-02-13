@@ -111,18 +111,23 @@ barchart=$(mycurl "https://www.barchart.com/stocks/quotes/$1/"  |egrep -o 'buy-c
 signalpattern=$(mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ticker=$1" |egrep 'MainContent_LastSignal\"|MainContent_LastPattern\"' |cut -d'>' -f2- |cut -d'<' -f1 |tr '\n' '|')
 [[ $signalpattern  ]] && echo -e "USBull Signal:\t"$signalpattern
 
-#ref: https://www.investopedia.com/terms/w/williamsr.asp
+#ref: https://www.investopedia.com/terms/w/williamsr.asp, /m/macd.asp
 willr=$(mycurl "https://www.alphavantage.co/query?function=WILLR&symbol=$1&interval=daily&time_period=10&apikey=$ALPHAVANTAGE_KEY" |jq -r "[[.[]][1][].WILLR]|first")
 echo $willr |awk '{if ($1<-80.0) print "William %R:\t\tOverSold"; if ($1>-20.0) print "William %R:\t\tOverBought"}'
-
-#ref: https://www.investopedia.com/terms/m/macd.asp
-macdcross=$(mycurl "https://www.alphavantage.co/query?function=MACD&symbol=$1&interval=daily&series_type=open&apikey=$ALPHAVANTAGE_KEY"|jq -r "[[.[]][1][]|.MACD_Hist]|.[0,1]" |tr '\n' ' ')  echo $macdcross |awk '{if($1>0 && $2<0) print "MACD:\ttGolden Cross"; if($1<0 && $2>0) print "MACD:\t\tDeath Cross"}'
-
+macdcross=$(mycurl "https://www.alphavantage.co/query?function=MACD&symbol=$1&interval=daily&series_type=open&apikey=$ALPHAVANTAGE_KEY"|jq -r "[[.[]][1][]|.MACD_Hist]|.[0,1]" |tr '\n' ' ')  
+echo $macdcross |awk '{if($1>0 && $2<0) print "MACD:\ttGolden Cross"; if($1<0 && $2>0) print "MACD:\t\tDeath Cross"}'
 rsi=$(mycurl "https://www.alphavantage.co/query?function=RSI&symbol=$1&interval=weekly&time_period=10&series_type=open&apikey=$ALPHAVANTAGE_KEY"| jq -r '[[.[]][1][].RSI]|first')
 [[ $rsi ]] && echo -e "RSI(10):\t\t"$rsi
 
 shortinterest=$(mycurl https://www.highshortinterest.com/all/ |egrep -o "q?s=[A-Z\.]+" |cut -d'=' -f2 |egrep -i $1)
 [[ $shortinterest ]] && echo -e "Short Interest:\tHigh"
+
+for screen in ta_p_doubletop ta_p_doublebottom ta_p_multiplebottom ta_p_multipletop ta_p_channeldown ta_p_channelup ta_p_tlsupport ta_p_tlresistance ta_p_wedgeup ta_p_wedgedown \
+              it_latestsales it_latestbuys n_earningsbefore n_earningsafter n_upgrades n_downgrades ta_oversold ta_overbought ta_unusualvolume ta_newlow ta_newhigh 
+do
+  mycurl "https://finviz.com/screener.ashx?v=410&s="$screen |egrep -o "quote.ashx\?t=[A-Z]+" |cut -d'=' -f2 |sort |uniq |egrep -w $1 |sed -e "s/$1/Screener:\t\t$screen/g" \
+          -e 's/ta_p_//g' -e 's/it_//g' -e 's/n_//g' -e 's/ta_//g'
+done
 
 echo "News"$newsdate"==================================================================================================" #recent (~1-2 days) news to show "heat index"
 [[ $newsdate ]] && mycurl "https://www.finviz.com/quote.ashx?t=$1" |egrep -B 20 $newsdate |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'

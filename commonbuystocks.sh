@@ -39,5 +39,12 @@ do
   [[ $etf_weight ]] && echo $count" "$etf_weight |awk '{printf("%5s%8s%8s%8s\n",$1,$2,$3,$4)}' >> tmpcommon 
 done
 
-#To show ETF with most common picks
-cat tmpcommon |awk '{print $3}'|egrep -v '^$'|sort|uniq -c|sort -nr | egrep -v '\s+1\s|\s+2\s|ARK' 
+>tmp #ETFs exposure to commonly selected stocks with combined weights
+cat tmpcommon |awk '{print $3}'|egrep -v '^$'|sort|uniq -c|sort -nr | egrep -v 'ARK' |while read line
+do
+  etf=$(echo $line |awk '{print $2}')  
+  total_weight=$(egrep $etf tmpcommon |awk '{print $4}' | awk '{sum+=$0}END{print sum"%"}')  
+  echo $line" "$total_weight |awk '{print $3" "$1" "$2}' >> tmp
+done
+echo "Weights    ETF    Count"
+cat tmp |sort -nr |head -n 20  |awk '{printf("%8s%6s%5s\n",$1,$3,$2)}'
