@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s expand_aliases
-alias mycurl='curl -s --max-time 3 -L -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" --ipv4 --http2 --compressed '
+alias mycurl='curl -s --max-time 10 -L -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" --ipv4 --http2 --compressed '
 set -- $(echo $1 |tr [:lower:] [:upper:]) #reset ticker to upper case
 [[ ! $FINNHUB_KEY ]]      && FINNHUB_KEY=$(mycurl $REPLIT_DB_URL/FINNHUB_KEY) #if running on repl.it, set KEY by: curl $REPLIT_DB_URL -d 'FINNHUB_KEY=[value]'
 [[ ! $FINNHUB_KEY ]]      && { echo "FINNHUB_KEY NOT defined (neither by system variable nor in repl.it key-value store"; exit; }
@@ -68,6 +68,15 @@ echo $gfvalue |awk '{if ($1>0) print $1}' |awk '{if ($1<'$price') print "GuruFoc
 fairvalue=$(mycurl https://finance.yahoo.com/quote/$1  |egrep -o 'Fw\(b\) Fl\(end\)\-\-m Fz\(s\).+'|cut -c1-80 |cut -d'>' -f2 |cut -d'<' -f1) #'
 [[ $fairvalue ]] && echo -e "Yahoo:\t\t\t"$fairvalue  #by Argus Research from Yahoo
 
+swsurl=$(mycurl 'https://17iqhzwxzw-dsn.algolia.net/1/indexes/companies/query?x-algolia-agent=Algolia%20for%20JavaScript%20(4.4.0)%3B%20Browser%20(lite)&x-algolia-api-key=be7c37718f927d0137a88a11b69ae419&x-algolia-application-id=17IQHZWXZW' \
+-H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0' \
+-H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'content-type: application/x-www-form-urlencoded' \
+-H 'Origin: https://simplywall.st' -H 'DNT: 1' -H 'Connection: keep-alive' \
+--data-raw '{"query":"('$1')","highlightPostTag":" ","highlightPreTag":" ","restrictHighlightAndSnippetArrays":true}' \
+|jq -r '.hits[]|select (.uniqueSymbol| (contains("NYSE") or contains("Nasdaq")) and endswith(":'$1'")) |.url')
+swsfairvalue=$(mycurl "https://simplywall.st$swsurl" |egrep -o '\[\[fair value\]\] \(\$[0-9]+.[0-9]+\)' |cut -d'(' -f2 |cut -d')' -f1) #'
+[[ $swsfairvalue ]] && echo -e "Simply WS:\t\t"$swsfairvalue
+
 echo "Ratings-------------------------------------------"
 pagedump=$(mycurl "https://www.gurufocus.com/stock/$1/summary" |egrep -A 2 '^Financial Strength|^Profitability Rank|^Valuation Rank'|egrep -v "</"|egrep -v "\-\-" |sed 's/Rank//g')
 strength=$(echo $pagedump |egrep -o 'Strength [0-9]+/10')
@@ -103,6 +112,12 @@ awk -F',' '{printf("TR Score:\t\t%d Bullish:%d%% Sentiment:%s\nPriceTarget:\t$%4
 wsb_mentions=$(mycurl 'https://wsbsynth.com/ajax/get_table.php' |jq -r '.data_values[] |select (.symbol=="'$1'")|.mentions') #'
 [[ $wsb_mentions ]] && echo -e "WSB mentions:\t"$wsb_mentions
 
+#Glassdoor employee rating for company
+companyname=$(mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq -r .companyFullName)
+reviewurl=$(mycurl 'https://www.glassdoor.com/Reviews/company-reviews.htm?context=Review' --data-urlencode "sc.keyword=$companyname"  |egrep "untranslatedUrl" |cut -d':' -f2- |sed "s/'//g")
+pagedump=$(mycurl $reviewurl |egrep -o 'ratingValue" : "[0-9].[0-9]"|percentage="[0-9]+" id="EmpStats_Recommend|percentage="[0-9]+" id="EmpStats_Approve' |sed -e 's/percentage="//g' -e 's/" id="EmpStats_/%-/g' -e 's/ratingValue" : "//g' -e 's/"/-rating (out of 5.0)/g') #' 
+[[ $pagedump ]] && echo -e "Glassdoor:\t\t"$pagedump
+
 echo "Technical & Trend ----------------------------------"
 candlestick=$(mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb=$1" |egrep 'Recent CandleStick Analysis' |egrep -o '>[A-Za-z ]*(Bullish|Bearish|Neutral)<' |sed -e 's/>//g' -e 's/<//g')  #'
 [[ $candlestick ]] && echo -e "CandleStick:\t"$candlestick
@@ -115,7 +130,7 @@ signalpattern=$(mycurl "https://www.americanbulls.com/SignalPage.aspx?lang=en&Ti
 willr=$(mycurl "https://www.alphavantage.co/query?function=WILLR&symbol=$1&interval=daily&time_period=10&apikey=$ALPHAVANTAGE_KEY" |jq -r "[[.[]][1][].WILLR]|first")
 echo $willr |awk '{if ($1<-80.0) print "William %R:\t\tOverSold"; if ($1>-20.0) print "William %R:\t\tOverBought"}'
 macdcross=$(mycurl "https://www.alphavantage.co/query?function=MACD&symbol=$1&interval=daily&series_type=open&apikey=$ALPHAVANTAGE_KEY"|jq -r "[[.[]][1][]|.MACD_Hist]|.[0,1]" |tr '\n' ' ')  
-echo $macdcross |awk '{if($1>0 && $2<0) print "MACD:\ttGolden Cross"; if($1<0 && $2>0) print "MACD:\t\tDeath Cross"}'
+echo $macdcross |awk '{if($1>0 && $2<0) print "MACD:\t\t\tGolden Cross"; if($1<0 && $2>0) print "MACD:\t\t\tDeath Cross"}'
 rsi=$(mycurl "https://www.alphavantage.co/query?function=RSI&symbol=$1&interval=weekly&time_period=10&series_type=open&apikey=$ALPHAVANTAGE_KEY"| jq -r '[[.[]][1][].RSI]|first')
 [[ $rsi ]] && echo -e "RSI(10):\t\t"$rsi
 
@@ -128,6 +143,8 @@ do
   mycurl "https://finviz.com/screener.ashx?v=410&s="$screen |egrep -o "quote.ashx\?t=[A-Z]+" |cut -d'=' -f2 |sort |uniq |egrep -w $1 |sed -e "s/$1/Screener:\t\t$screen/g" \
           -e 's/ta_p_//g' -e 's/it_//g' -e 's/n_//g' -e 's/ta_//g'
 done
+
+egrep -w $1 simplywallstreet.csv  |sed -e "s/$1/SimplyScreen:/g" -e "s/,/\t/g"
 
 echo "News"$newsdate"==================================================================================================" #recent (~1-2 days) news to show "heat index"
 [[ $newsdate ]] && mycurl "https://www.finviz.com/quote.ashx?t=$1" |egrep -B 20 $newsdate |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
@@ -199,11 +216,11 @@ mycurl "https://caps.fool.com/Ticker/$1/Scorecard.aspx" |egrep -A 30 "player/\w+
 cat tmp |awk -F',' '{printf("%-30s%-8s%-12s%-6s%-12shttps://caps.fool.com/player/%s.aspx\n",$1,$2,$3,$4,$5,$1)}'
 
 >tmp #Marketwatch games
+weekagoSec=$(date --date "7 days ago" +'%s')
 egrep "^$1,"  $GAMES |while read line
 do
   transactionDate=$(echo $line |cut -d',' -f2)
-  transactionSec=$(date --date "$transactionDate" +'%s')   
-  weekagoSec=$(date --date "7 days ago" +'%s')
+  transactionSec=$(date --date "$transactionDate" +'%s')     
   url="https://www.marketwatch.com/$(echo $line |cut -d',' -f5)"  
   tinyurl=$(mycurl "http://tinyurl.com/api-create.php?url=$url")  
   [ $transactionSec -gt $weekagoSec ] && echo $line,$tinyurl |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$6}' >> tmp
@@ -222,8 +239,8 @@ if  egrep -wq "$1" $ARK; then
   done
 fi
 
-#Whale Wisdom
-egrep "^$1," $WHALEWISDOM |sort | uniq |sed -e 's/whalewisdom-add.csv/Add/g' -e 's/whalewisdom-new.csv/New/g'> tmp
+#WhaleWisdom ADD/NEW with performance records
+egrep "^$1," $WHALEWISDOM |sort | uniq |egrep "%" |sed -e 's/whalewisdom-add.csv/Add/g' -e 's/whalewisdom-new.csv/New/g'> tmp
 [[ -s tmp ]] && echo "Recent 13F filers by whaleswisdom-------------------------------------LastQ---LastY---"; \
 cat tmp  |awk -F',' '{printf("%-10s%-60s%-8s%-8s\n",$1,$2,$3,$4)}'
 
@@ -242,6 +259,6 @@ if [[ $last && $head && $tail ]]; then
 fi
 
 egrep -w $1 tipranks.csv > tmp
-[[ -s tmp ]] && echo "TipRanks Top Public Portfolio Holdings----------------------"; cat tmp
+[[ -s tmp ]] && echo "TipRanks Top Public Portfolio Holdings---------------------"; cat tmp
 egrep -w $1 youtubers.csv > tmp
 [[ -s tmp ]] && echo "Youtubers' Holdings----------------------------------------";  cat tmp

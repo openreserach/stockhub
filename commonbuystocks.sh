@@ -10,25 +10,22 @@ export FOOL_PLAYER_RATING=90.0  #percent
 export MARKET_CAP=1000000000    #$1B 
 
 >tmp
+weekagoSec=$(date --date "$GAMES_IN_RECENTDAY days ago" +'%s')  
 cat $MARKETWATCH |egrep ',Buy,' |sort |uniq |while read line
 do #recent buy in last N days
   transactionDate=$(echo $line |cut -d',' -f2)
-  transactionSec=$(date --date "$transactionDate" +'%s')   
-  weekagoSec=$(date --date "$GAMES_IN_RECENTDAY days ago" +'%s')  
+  transactionSec=$(date --date "$transactionDate" +'%s')
   [ $transactionSec -gt $weekagoSec ] && echo $line |cut -d',' -f1 >> tmp  
 done 
 
-mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |cut -d',' -f1 |egrep -v '^$' |sort |uniq >> tmp  #Barron's pick
 cat $FOOLPICKS  |awk -F',' '{if( $4>'$FOOL_PLAYER_RATING'){print $1}}'|sort     >> tmp  #FOOL high rating players' picks
-cat seekingalphalong.csv  |sort >> tmp                                                  #recent(~2days) LONG recommendation by seekingalpha
 cat gurufocus.csv         |egrep "Buy:|Add:" |cut -d':' -f2 |tr ',' '\n'>>tmp           #Guru's recent Buy/Add
 cat whalewisdom-add.csv   |cut -d',' -f1 |sort |uniq  >> tmp                            #13F recent filers' new position
 cat whalewisdom-new.csv   |cut -d',' -f1 |sort |uniq  >> tmp                            #13F recent filer's add position
 cat ark.csv |egrep '^ARK' |cut -d',' -f2 |sort |uniq |egrep '[A-Z]+' >> tmp             #all ARK* invenstment holdings
 cat youtubers.csv         |cut -d',' -f2 |sort |uniq >> tmp                             #Distinct youtuber's picks
 cat tipranks.csv          |cut -d',' -f2 |sort |uniq >> tmp 
-cat barrons.csv           |cut -d',' -f1 |sort |uniq >> tmp 
-cat insiderbuy.csv                       |sort |uniq >> tmp
+cat insiderbuy.csv                       |sort |uniq >> tmp                              #Lastest buy by insiders
 
 echo "Sources Ticker    ETF   Weight"  >tmpcommon
 cat tmp |sort |uniq -c |sort -nr | egrep -v '\s+1\s|\s+2\s' |while read line
@@ -39,7 +36,8 @@ do
   [[ $etf_weight ]] && echo $count" "$etf_weight |awk '{printf("%5s%8s%8s%8s\n",$1,$2,$3,$4)}' >> tmpcommon 
 done
 
->tmp #ETFs exposure to commonly selected stocks with combined weights
+echo "ETF play: ETFs exposed to commonly selected stocks sorted by combined weights"
+>tmp 
 cat tmpcommon |awk '{print $3}'|egrep -v '^$'|sort|uniq -c|sort -nr | egrep -v 'ARK' |while read line
 do
   etf=$(echo $line |awk '{print $2}')  
@@ -48,3 +46,17 @@ do
 done
 echo "Weights    ETF    Count"
 cat tmp |sort -nr |head -n 20  |awk '{printf("%8s%6s%5s\n",$1,$3,$2)}'
+echo "-----------------------------------------"
+
+echo "Fool Play: Multiple fool players buy"
+cat foolrecentpick.csv |egrep '9[0-9]\.[0-9]+' |cut -d',' -f1 |sort |uniq -d |tr '\n' ',';echo
+echo "-----------------------------------------"
+
+echo "ARK Play: Stocks newly added to ARK"
+> tmp 
+for ark in ARKK ARKG ARKW ARKQ ARKF
+do
+  mycurl "https://www.arktrack.com/$ark.json" | jq -r '.[]|.ticker'  |sort |uniq -c |sort -n |head |awk '{if ($1<10) print $2}' >> tmp
+done
+cat tmp |sort |uniq |tr '\n' ',';echo
+echo "-----------------------------------------"

@@ -112,6 +112,17 @@ do #TipRank TOP 100 *Public* Portfolio
   done
 done
 
+>simplywallstreet.csv
+mycurl -s 'https://simplywall.st/discover/investing-ideas' |egrep -o '/discover/investing-ideas/[0-9]+/[a-z-]+' |while read uri
+do
+  idea=$(echo $uri |cut -d'/' -f5)
+  mycurl  "https://simplywall.st$uri" |egrep -o "NYSE:[A-Z]+|NasdaqG[A-Z]:[A-Z]+" |cut -d':' -f2 |sort |uniq |while read ticker
+  do
+    echo $ticker,$idea >> simplywallstreet.csv
+  done
+done
+
+
 [[  ! -z $(find . -name "*.csv" -type f -size 0) ]] && echo "Incomplete" || echo "Complete" 
 
 ./commonbuystocks.sh
