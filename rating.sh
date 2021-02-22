@@ -146,10 +146,6 @@ echo "News"$newsdate"===========================================================
 [[ $newsdate ]] && mycurl "https://www.finviz.com/quote.ashx?t=$1" |egrep -B 20 $newsdate |egrep -o 'tab-link-news">.[^<]+' |cut -d'>' -f2-  |cat -n |sed 's/^[[:space:]]*//g'
 
 echo "What people say(social media)===================================================================================="
-#WallStreetBets mentioned in 24 hours (as a 'hot' index)
-wsb_mentions=$(mycurl 'https://wsbsynth.com/ajax/get_table.php' |jq -r '.data_values[] |select (.symbol=="'$1'")|.mentions') #'
-[[ $wsb_mentions ]] && echo -e "WSB mentions:\t"$wsb_mentions
-
 >tmp
 mycurl "https://www.tradingview.com/symbols/$market-$1"  |egrep  -A 45 -B 1 "idea__label tv-idea-label--long|idea__label tv-idea-label--short" |egrep -o "idea-label--long|idea-label--short|data-username=\"\S+\"|data-timestamp=\"[0-9]+.[0-9]|idea__timeframe\">, [0-9DWM]+<" |sed -e 's/idea__timeframe">, //g' -e 's/idea-label--//g' -e 's/data-username="//g' -e 's/data-timestamp=\"//g' -e 's/<//g' -e 's/"//g' |tr '\n' ','|sed 's/\.0,/\n/g' |awk -F',' '{if (NF>3) print $1","$2","$3","$4}' |while read post
 do  
@@ -199,13 +195,26 @@ done
 
 #SeekingAlpha Long ideas
 url=$(mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |egrep -o 'a-title\" href=\".[^"]+|\/symbol\/[A-Z]+' |egrep -B 1 -w "$1$" |head -n 1|cut -d'"' -f3)
-[[ $url ]] && { echo "SeekingAlpha-------------------------------------------------------------------------"; \
-echo $(mycurl "http://tinyurl.com/api-create.php?url="https://seekingalpha.com/"$url"); }
-#TODO:if content hidden$mycurl 'https://seekingalpha.com/api/v3/articles/[article-ID]?include=author%2Cauthor.authorResearch%2Cco_authors%2CprimaryTickers%2CsecondaryTickers%2CotherTags%2Cpresentations%2Cpresentations.slides%2Csentiments%2CpromotedService' |jq "."
+if [ $url ]; then
+  echo "SeekingAlpha-------------------------------------------------------------------------"
+  tinyurl=$(mycurl "http://tinyurl.com/api-create.php?url="https://seekingalpha.com/"$url")
+  articleid=$(echo $url |cut -d'/' -f3 |cut -d'-' -f1)    
+  articleurl="https://seekingalpha.com/api/v3/articles/$articleid?include=author%2Cauthor.authorResearch%2Cauthor.authorSponsorProgram%2Cco_authors%2CprimaryTickers%2CsecondaryTickers%2CotherTags%2Cpresentations%2Cpresentations.slides%2Csentiments%2CpromotedService"  
+  articlepage=$(mycurl "https://seekingalpha.com/api/v3/articles/$articleid?include=author%2Cauthor.authorResearch%2Cauthor.authorSponsorProgram%2Cco_authors%2CprimaryTickers%2CsecondaryTickers%2CotherTags%2Cpresentations%2Cpresentations.slides%2Csentiments%2CpromotedService")
+  disclosure=$(echo $articlepage |jq -r ".data.attributes.disclosure" |egrep -o "<span>.+<\/span> "  |cut -d'>' -f2 |cut -d'<' -f1)
+  title=$(echo $articlepage |jq -r ".data.attributes.title")
+  echo -n $disclosure" "; echo $tinyurl
+  echo $title;
+  echo $articlepage |jq -r ".data.attributes.summary"
+fi
 
 #Barron's Picks & Pans
 mycurl "https://www.barrons.com/picks-and-pans?page=1" |sed 's/<tr /\n/g' |awk '/<th>Symbol<\/th>/,/id="next"/'|egrep -o "barrons.com/quote/STOCK/[A-Z/]+|[0-9]+/[0-9]+/[0-9]+" |tr '\n' ',' |sed 's/barrons/\n/g' |cut -d '/' -f6- |egrep -w $1 |cut -d',' -f2 |while read barron
 do echo "Barron's Picks:"$barron"------------------------------------------------------------"; done
+
+#WallStreetBets mentioned in 24 hours (as a 'hot' index)
+wsb_mentions=$(mycurl 'https://wsbsynth.com/ajax/get_table.php' | jq -r '.data_values |map(.symbol=="'$1'") |index(true)') #' 
+[[ $wsb_mentions -ne "null" ]] && echo -e "WSB HotIndex:\t"$wsb_mentions
 
 echo 
 echo "What people do==================================================================================================="
@@ -225,7 +234,7 @@ cat tmp |awk -F',' '{printf("%-30s%-8s%-12s%-6s%-12shttps://caps.fool.com/player
 #  tinyurl=$(mycurl "http://tinyurl.com/api-create.php?url=$url")  
 #  [ $transactionSec -gt $weekagoSec ] && echo $line,$tinyurl |awk -F',' '{printf "%-12s%-10s%-9s%-s\n",$3,$2,$4,$6}' >> tmp
 #done
-#[[ -s tmp ]] && echo "Buy/Short---Date------#Rank----./fettch Game---------------------------"; cat tmp; 
+#[[ -s tmp ]] && echo "Buy/Short---Date------#Rank----Game---------------------------"; cat tmp; 
 
 #Ark Investment daily change tracked by arktrack.com    
 if  egrep -wq "$1" $ARK; then 
@@ -240,7 +249,7 @@ if  egrep -wq "$1" $ARK; then
 fi
 
 #WhaleWisdom ADD/NEW with performance records
-egrep -w "^$1" $WHALEWISDOM |awk -F',' '{printf("%-60s%-16s%-8s%-8s\n",$3,$2,$4,$5)}' >tmp
+egrep -w "^$1" $WHALEWISDOM |egrep '[0-9.]+%,[0-9.]+%' |awk -F',' '{print $4,$5,$2,$3}' |sort -nr |awk '{printf("%-60s%-16s%-8s%-8s\n",$4,$3,$1,$2)}' >tmp
 [[ -s tmp ]] && echo "Recent 13F filers by whaleswisdom---------------------------Action----------LastQ---LastY---"; cat tmp  
 
 #Gurufocus Latest Buy  #TODO: https://www.gurufocus.com/stock/<ticker>/guru-trades

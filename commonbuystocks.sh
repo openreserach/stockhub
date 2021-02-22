@@ -3,28 +3,27 @@
 shopt -s expand_aliases
 alias mycurl="curl -s --max-time 5 -L -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0' --ipv4 --http2 --compressed"
 
-#export MARKETWATCH="marketwatchgames.csv"
-export FOOLPICKS="foolrecentpick.csv" 
-export GAMES_IN_RECENTDAY=14    #days 
 export FOOL_PLAYER_RATING=90.0  #percent
 export MARKET_CAP=1000000000    #$1B 
 
->tmp
+#export GAMES_IN_RECENTDAY=14    #days 
 #weekagoSec=$(date --date "$GAMES_IN_RECENTDAY days ago" +'%s')  
-#cat $MARKETWATCH |egrep ',Buy,' |sort |uniq |while read line
+#cat marketwatchgames.csv |egrep ',Buy,' |sort |uniq |while read line
 #do #recent buy in last N days
 #  transactionDate=$(echo $line |cut -d',' -f2)
 #  transactionSec=$(date --date "$transactionDate" +'%s')
 #  [ $transactionSec -gt $weekagoSec ] && echo $line |cut -d',' -f1 >> tmp  
 #done 
-#cat youtubers.csv        |cut -d',' -f2 |sort |uniq >> tmp                            #Distinct youtuber's picks
+#cat youtubers.csv        |cut -d',' -f2 |sort |uniq >> tmp                             #Distinct youtuber's picks
+
+>tmp
 cat gurufocus.csv         |egrep "Buy:|Add:" |cut -d':' -f2 |tr ',' '\n'>>tmp           #Guru's recent Buy/Add
-#cat whalewisdom-add.csv   |cut -d',' -f1 |sort |uniq  >> tmp                            #13F recent filers' new position
-#cat whalewisdom-new.csv   |cut -d',' -f1 |sort |uniq  >> tmp                            #13F recent filer's add position
 cat ark.csv |egrep '^ARK' |cut -d',' -f2 |sort |uniq |egrep '[A-Z]+' >> tmp             #all ARK* invenstment holdings
-cat tipranks.csv          |cut -d',' -f2 |sort |uniq >> tmp 
 cat insiderbuy.csv                       |sort |uniq >> tmp                             #Lastest buy by insiders
-cat $FOOLPICKS |awk -F',' '{if( $4>'$FOOL_PLAYER_RATING'){print $1}}'|sort   >> tmp     #FOOL high rating players' picks
+cat seekingalphalong.csv                             >> tmp                             #Seekingalpha Long
+cat foolrecentpick.csv    |awk -F',' '{if( $4>'$FOOL_PLAYER_RATING'){print $1}}'|sort   >> tmp   #FOOL high rating players' picks
+cat whalewisdom.csv       |egrep ",new,|,addition," |cut -d',' -f1 |sort |uniq -c |sort -nr |head -n 100 |awk '{print $2}' >> tmp #13F new/addition TOP-100 HEATMAP
+cat tipranks.csv          |cut -d',' -f2 |sort |uniq -c |sort -nr |head -n 100 |awk '{print $2}' >> tmp #tiprank investors' TOP-100 HEATMAP
 
 echo "Sources Ticker    ETF   Weight"  >tmpcommon
 #cat tmp |sort |uniq -c |sort -nr | egrep -v '\s+1\s|\s+1\s' |while read line

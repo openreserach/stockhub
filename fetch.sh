@@ -12,7 +12,7 @@ echo -e "FearGreed (0-100):\t\t\t\t"$(mycurl "https://money.cnn.com/data/fear-an
 pagedump=$(mycurl "https://markets.cboe.com/us/options/market_statistics/daily/" |egrep -A 1 '>INDEX PUT/CALL RATIO<|>EQUITY PUT/CALL RATIO<' |egrep -o '>[0-9].[0-9]+<' |sed -e 's/>//g' -e 's/<//g')
 echo -e "Index  Put/Call Ratio:\t\t\t"$(echo $pagedump|awk '{print $1}')
 echo -e "Equity Put/Call Ratio:\t\t\t"$(echo $pagedump|awk '{print $2}') 
-echo -e "VIX (current):\t\t\t\t\t"$(mycurl "https://www.cboe.com/tradable_products/vix/quote/" |jq -r ".data.quote")
+echo -e "VIX(current chahnge):\t\t\t"$(mycurl "https://www.cboe.com/tradable_products/vix/quote/" |jq -r ".data.quote,.data.prev_close"  |tr '\n' ' ' |awk '{print $1,$1-$2}')
 
 echo -e "Personal Saving Rate:\t\t\t"$(mycurl "https://fred.stlouisfed.org/series/PSAVERT" |egrep '20[0-9]+: <span class="series-meta-observation-value' |sed -e 's/: <span class="series-meta-observation-value">/ /g' |cut -d'<' -f1|sed 's/^[[:space:]]*//g' |awk '{print $3}')"%"   
 echo -e "Crash Index:\t\t\t"$(mycurl https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly |jq -r ".dataset_data.data[0][1]")
