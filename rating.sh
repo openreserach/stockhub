@@ -110,9 +110,11 @@ awk -F',' '{printf("TR Score:\t\t%d Bullish:%d%% Sentiment:%s\nPriceTarget:\t$%4
 
 #Glassdoor employee rating for company
 companyname=$(mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq -r .companyFullName)
-reviewurl=$(mycurl 'https://www.glassdoor.com/Reviews/company-reviews.htm?context=Review' --data-urlencode "sc.keyword=$companyname"  |egrep "untranslatedUrl" |cut -d':' -f2- |sed "s/'//g")
-pagedump=$(mycurl $reviewurl |egrep -o 'ratingValue" : "[0-9].[0-9]"|percentage="[0-9]+" id="EmpStats_Recommend|percentage="[0-9]+" id="EmpStats_Approve' |sed -e 's/percentage="//g' -e 's/" id="EmpStats_/%-/g' -e 's/ratingValue" : "//g' -e 's/"/-rating (out of 5.0)/g') #' 
-[[ $pagedump ]] && echo -e "Glassdoor:\t\t"$pagedump
+if [[ ! -z $companyname ]]; then
+  reviewurl=$(mycurl 'https://www.glassdoor.com/Reviews/company-reviews.htm?context=Review' --data-urlencode "sc.keyword=$companyname"  |egrep "untranslatedUrl" |cut -d':' -f2- |sed "s/'//g")
+  pagedump=$(mycurl $reviewurl |egrep -o 'ratingValue" : "[0-9].[0-9]"|percentage="[0-9]+" id="EmpStats_Recommend|percentage="[0-9]+" id="EmpStats_Approve' |sed -e 's/percentage="//g' -e 's/"   id="EmpStats_/%-/g' -e 's/ratingValue" : "//g' -e 's/"/-rating (out of 5.0)/g') #' 
+  [[ $pagedump ]] && echo -e "Glassdoor:\t\t"$pagedump
+fi
 
 echo "Technical & Trend ----------------------------------"
 candlestick=$(mycurl "https://www.stockta.com/cgi-bin/analysis.pl?symb=$1" |egrep 'Recent CandleStick Analysis' |egrep -o '>[A-Za-z ]*(Bullish|Bearish|Neutral)<' |sed -e 's/>//g' -e 's/<//g')  #'
@@ -199,7 +201,7 @@ if [ $url ]; then
   echo "SeekingAlpha-------------------------------------------------------------------------"
   tinyurl=$(mycurl "http://tinyurl.com/api-create.php?url="https://seekingalpha.com/"$url")
   articleid=$(echo $url |cut -d'/' -f3 |cut -d'-' -f1)    
-  articleurl="https://seekingalpha.com/api/v3/articles/$articleid?include=author%2Cauthor.authorResearch%2Cauthor.authorSponsorProgram%2Cco_authors%2CprimaryTickers%2CsecondaryTickers%2CotherTags%2Cpresentations%2Cpresentations.slides%2Csentiments%2CpromotedService"  
+  #articleurl="https://seekingalpha.com/api/v3/articles/$articleid?include=author%2Cauthor.authorResearch%2Cauthor.authorSponsorProgram%2Cco_authors%2CprimaryTickers%2CsecondaryTickers%2CotherTags%2Cpresentations%2Cpresentations.slides%2Csentiments%2CpromotedService"  
   articlepage=$(mycurl "https://seekingalpha.com/api/v3/articles/$articleid?include=author%2Cauthor.authorResearch%2Cauthor.authorSponsorProgram%2Cco_authors%2CprimaryTickers%2CsecondaryTickers%2CotherTags%2Cpresentations%2Cpresentations.slides%2Csentiments%2CpromotedService")
   disclosure=$(echo $articlepage |jq -r ".data.attributes.disclosure" |egrep -o "<span>.+<\/span> "  |cut -d'>' -f2 |cut -d'<' -f1)
   title=$(echo $articlepage |jq -r ".data.attributes.title")
