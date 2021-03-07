@@ -15,7 +15,7 @@ echo -e "Equity Put/Call Ratio:\t\t\t"$(echo $pagedump|awk '{print $2}')
 echo -e "VIX(daily+/-change):\t\t\t"$(mycurl "https://www.cboe.com/tradable_products/vix/quote/" |jq -r ".data.quote,.data.prev_close"  |tr '\n' ' ' |awk '{print $1,$1-$2}')
 
 echo -e "Personal Saving Rate:\t\t\t"$(mycurl "https://fred.stlouisfed.org/series/PSAVERT" |egrep '20[0-9]+: <span class="series-meta-observation-value' |sed -e 's/: <span class="series-meta-observation-value">/ /g' |cut -d'<' -f1|sed 's/^[[:space:]]*//g' |awk '{print $3}')"%"   
-echo -e "Crash Index:\t\t\t"$(mycurl https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly |jq -r ".dataset_data.data[0][1]")
+echo -e "Crash Index:\t\t\t\t"$(mycurl https://www.quandl.com/api/v3/datasets/YALE/US_CONF_INDEX_CRASH_INDIV/data?collapse=monthly |jq -r ".dataset_data.data[0][1]")
 echo -e "Customer Securities Debit:\t\t"$(mycurl https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics |egrep -m 1 -B 50 '<\/tbody>' |egrep -A 50 "<th>Month/Year</th>" |tac |head -n 4|egrep "Debit Balances"  |cut -d'>' -f2 |cut -d'<' -f1) 
 #ref:https://www.gurufocus.com/stock-market-valuations.php
 mycurl "https://www.gurufocus.com/stock-market-valuations.php" |egrep -o "Banks\s+\(currently at .+ a year" |egrep -o "[-0-9.]+%" |tr '\n' ' ' \
@@ -51,7 +51,7 @@ done
 
 #whalewisdom.com 13F latest filler 
 echo -n "13F"; >whalewisdom.csv
-mycurl https://whalewisdom.com/filing/latest_filings |egrep -o '/filer/.+"' |cut -d'/' -f3 |sed 's/"//g' |while read filer
+mycurl https://whalewisdom.com/filing/latest_filings |egrep -o '^\s+<a.+/filer/.+"' |cut -d'/' -f3 |sed 's/"//g' |sort |uniq |while read filer
 do
   echo -n "."  
   performance=$(mycurl "https://whalewisdom.com/filer/$filer" |egrep -A 1 -B 3 "Performance Last 4 Quarters" |egrep -o "[0-9.]+%|-[0-9.]+%" |tr '\n' ',')  
@@ -87,7 +87,7 @@ mycurl 'https://simplywall.st/discover/investing-ideas' |egrep -o '/discover/inv
 do
   echo -n "."
   idea=$(echo $uri |cut -d'/' -f5)
-  mycurl  "https://simplywall.st$uri" |egrep -o "NYSE:[A-Z]+|NasdaqG[A-Z]:[A-Z]+" |cut -d':' -f2 |sort |uniq |while read ticker
+  mycurl  "https://simplywall.st$uri/US" |egrep -o "NYSE:[A-Z]+|NasdaqG[A-Z]:[A-Z]+" |cut -d':' -f2 |sort |uniq |while read ticker
   do
     echo $ticker,$idea >> simplywallstreet.csv
   done
