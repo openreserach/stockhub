@@ -3,10 +3,8 @@
 shopt -s expand_aliases
 alias mycurl='curl -s --max-time 10 -L -A "Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0" --ipv4 --http2 --compressed '
 set -- $(echo $1 |tr [:lower:] [:upper:]) #reset ticker to upper case
-[[ ! $FINNHUB_KEY ]]      && FINNHUB_KEY=$(mycurl $REPLIT_DB_URL/FINNHUB_KEY) #if running on repl.it, set KEY by: curl $REPLIT_DB_URL -d 'FINNHUB_KEY=[value]'
-[[ ! $FINNHUB_KEY ]]      && { echo "FINNHUB_KEY NOT defined (neither by system variable nor in repl.it key-value store"; exit; }
-[[ ! $ALPHAVANTAGE_KEY ]] && ALPHAVANTAGE_KEY=$(mycurl $REPLIT_DB_URL/ALPHAVANTAGE_KEY)
-[[ ! $ALPHAVANTAGE_KEY ]] && { echo "ALPHAVANTAGE_KEY NOT defined (neither by system variable nor in repl.it key-value store"; exit; }
+[[ ! $FINNHUB_KEY ]]      && { echo "FINNHUB_KEY      NOT defined (neither by environment variable nor in repl.it Secrets"; exit; }
+[[ ! $ALPHAVANTAGE_KEY ]] && { echo "ALPHAVANTAGE_KEY NOT defined (neither by environment variable nor in repl.it Secrets"; exit; }
 
 FOOL="foolrecentpick.csv"
 #GAMES="marketwatchgames.csv"
@@ -111,8 +109,7 @@ awk -F',' '{printf("TR Score:\t\t%d Bullish:%d%% Sentiment:%s\nPriceTarget:\t$%4
 #Glassdoor employee rating for company
 companyname=$(mycurl "https://www.tipranks.com/api/stocks/getData/?name=$1" |jq -r .companyFullName)
 reviewurl=$(mycurl 'https://www.glassdoor.com/Reviews/company-reviews.htm?context=Review' --data-urlencode "sc.keyword=$companyname"  |egrep "untranslatedUrl" |cut -d':' -f2- |sed "s/'//g")  
-if [[ ! -z $reviewurl ]]; then  
-  #reviewurl=$(mycurl 'https://www.glassdoor.com/Reviews/company-reviews.htm?context=Review' --data-urlencode "sc.keyword=$companyname"  |egrep "untranslatedUrl" |cut -d':' -f2- |sed "s/'//g")  
+if [[ ! -z $reviewurl ]]; then   
   pagedump=$(mycurl $reviewurl |egrep -o 'ratingValue" : "[0-9].[0-9]"|percentage="[0-9]+" id="EmpStats_Recommend|percentage="[0-9]+" id="EmpStats_Approve' |sed -e 's/percentage="//g' -e 's/\" id=\"EmpStats_/ /g' -e 's/ratingValue\" : \"//g' -e 's/"/ Rating\(out of 5\)/g') #' 
   [[ $pagedump ]] && echo -e "Glassdoor:\t\t"$pagedump
 fi
@@ -197,15 +194,13 @@ done
 [[ -s tmp ]] && echo "Redditers---------------------------------------------------------------------------------------------------------"; cat tmp; 
 
 #SeekingAlpha Long ideas
-#url=$(mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |egrep -o 'a-title\" href=\".[^"]+|\/symbol\/[A-Z]+' |sed "/symbol\/$1/q" |tac |egrep -m 1 "a-title" |cut -d'"' -f3)
-long=$(mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |egrep "/symbol/$1")
+long=$(mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |egrep "/symbol/$1\"")
 if [[ $long ]]; then
   echo "SeekingAlpha-------------------------------------------------------------------------"
   url=$(mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |egrep -o 'a-title\" href=\".[^"]+|\/symbol\/[A-Z]+' |sed "/symbol\/$1/q" |tac |egrep -m 1 "a-title" |cut -d'"' -f3)
   tinyurl=$(mycurl "http://tinyurl.com/api-create.php?url="https://seekingalpha.com/"$url")
   articleid=$(echo $url |cut -d'/' -f3 |cut -d'-' -f1)  
-  articlepage=$(mycurl "https://seekingalpha.com/api/v3/articles/$articleid?include=author%2Cauthor.authorResearch%2Cauthor.authorSponsorProgram%2Cco_authors%2CprimaryTickers%2CsecondaryTickers%2CotherTags%2Cpresentations%2Cpresentations.slides%2Csentiments%2CpromotedService")
-  #echo "https://seekingalpha.com/api/v3/articles/$articleid?include=author%2Cauthor.authorResearch%2Cauthor.authorSponsorProgram%2Cco_authors%2CprimaryTickers%2CsecondaryTickers%2CotherTags%2Cpresentations%2Cpresentations.slides%2Csentiments%2CpromotedService"
+  articlepage=$(mycurl "https://seekingalpha.com/api/v3/articles/$articleid?include=author%2Cauthor.authorResearch%2Cauthor.authorSponsorProgram%2Cco_authors%2CprimaryTickers%2CsecondaryTickers%2CotherTags%2Cpresentations%2Cpresentations.slides%2Csentiments%2CpromotedService")  
   disclosure=$(echo $articlepage |jq -r ".data.attributes.disclosure" |egrep -o "<span>.+<\/span> "  |cut -d'>' -f2 |cut -d'<' -f1)
   title=$(echo $articlepage |jq -r ".data.attributes.title")
   echo -n $disclosure" "; echo $tinyurl
@@ -243,7 +238,7 @@ cat tmp |awk -F',' '{printf("%-30s%-8s%-12s%-6s%-12shttps://caps.fool.com/player
 
 #Ark Investment daily change tracked by arktrack.com    
 if  egrep -wq "$1" $ARK; then 
-  echo "ARK :Significant(>1%) change(+/-/0) in the fund in last 30 days----------------------------"
+  echo "ARK :Significant(>1%) change(+/-/0) in the fund in last 30 days------------------------"
   for ark in ARKW ARKK ARKQ ARKG ARKF
   do #show percent-change for last 30 trading days, the rightmost being the most recent change
     percent=$(mycurl 'https://www.arktrack.com/'$ark'.json' | jq -r '.[] |(.ticker|split(" ")[0]) as $short|select ($short == "'$1'")|.percent' |tail -n 1)
@@ -253,9 +248,9 @@ if  egrep -wq "$1" $ARK; then
   done
 fi
 
-#WhaleWisdom ADD/NEW with performance records
-egrep -w "^$1" $WHALEWISDOM |egrep '[0-9.]+%,[0-9.]+%' |awk -F',' '{print $4,$5,$2,$3}' |sort -nr |awk '{printf("%-60s%-16s%-8s%-8s\n",$4,$3,$1,$2)}' >tmp
-[[ -s tmp ]] && echo "Recent 13F filers by whaleswisdom---------------------------Action----------LastQ---LastY---"; cat tmp  
+#WhaleWisdom NEW positions with last Q/Y performance records
+egrep -w "^$1" $WHALEWISDOM |egrep '[0-9.]+%,[0-9.]+%'  |awk -F',' '{printf("%-50s%-8s%-8s\n",$2,$3,$4)}' > tmp
+[[ -s tmp ]] && echo "Recent 13F filers new position by whaleswisdom----LastQ---LastY-----------------------"; cat tmp
 
 #Gurufocus Latest Buy  #TODO: https://www.gurufocus.com/stock/<ticker>/guru-trades
 mycurl "https://www.dataroma.com/m/activity.php?sym=$1&typ=a"  | tr -d $'\r' |cat -n > tmp 
@@ -272,5 +267,5 @@ if [[ $last && $head && $tail ]]; then
 fi
 
 onemonth=$(date -d'30 days ago' +%s) #investor (4.5+ stars) recent (<30 days) transaction  
-mycurl "https://www.tipranks.com/api/crowd/publicPortfolios/?ticker=$1" |jq -r --arg onemonth "$onemonth" '.[] | select ((.effectiveDate+"Z" |fromdateiso8601 >'$onemonth') and (.stars>4.5)) |.expertPortfolioID,.stars,.portfolioActionID,.adjExecutionPrice, .effectiveDate' |tr '\n' ',' |sed 's/T00:00:00/\n/g' |sed -e 's/^,//g' -e 's/,1,/,opened,/g' -e 's/,2,/,increased,/g' -e 's/,3,/,reduced,/g' -e 's/,4,/,closed,/g' |awk -F',' '{printf ("%8s%8.2f%12s%8.2f%16s\n",$1,$2,$3,$4,$5)}' > tmp
-[[ -s tmp ]] && echo "TipRankID  Stars      Action   Price      Date--------------------------------------------------------------------"; cat tmp; 
+mycurl "https://www.tipranks.com/api/crowd/publicPortfolios/?ticker=$1" |jq -r --arg onemonth "$onemonth" '.[] | select ((.effectiveDate+"Z" |fromdateiso8601 >'$onemonth') and (.stars>4.5)) |.expertPortfolioID,.stars,.portfolioActionID,.adjExecutionPrice, .effectiveDate' |tr '\n' ',' |sed 's/T00:00:00/\n/g' |sed -e 's/^,//g' -e 's/,1,/,opened,/g' -e 's/,2,/,increased,/g' -e 's/,3,/,reduced,/g' -e 's/,4,/,closed,/g' |awk -F',' '{printf ("%-45s%8.2f%12s%8.2f%16s\n","https://www.tipranks.com/investors/"$1,$2,$3,$4,$5)}' > tmp
+[[ -s tmp ]] && echo "--------------------TipRankID-------------------Stars------Action---Price------Date--------------------------------"; cat tmp;

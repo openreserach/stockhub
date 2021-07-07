@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s expand_aliases
-alias mycurl="curl -s --max-time 10 -L -A 'Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0' --ipv4 --http2 --compressed"
+alias mycurl="curl -s --max-time 10 -L -A 'Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/81.0' --ipv4 --http2 --compressed"
 
 echo "Economic & Market Overview===================="
 #ref: https://en.wikipedia.org/wiki/Price%E2%80%93earnings_ratio#Historical_P/E_ratios_for_the_U.S._stock_market
@@ -55,7 +55,8 @@ mycurl https://whalewisdom.com/filing/latest_filings |egrep -o '^\s+<a.+/filer/.
 do
   echo -n "."  
   performance=$(mycurl "https://whalewisdom.com/filer/$filer" |egrep -A 1 -B 3 "Performance Last 4 Quarters" |egrep -o "[0-9.]+%|-[0-9.]+%" |tr '\n' ',')  
-  mycurl "https://whalewisdom.com/filer/holdings?id=$filer&limit=100" |jq -r '.rows[]|[.symbol, .position_change_type] |@csv' |sed 's/"//g' |egrep "new|addition|reduction|soldall" |while read position 
+  #mycurl "https://whalewisdom.com/filer/holdings?id=$filer&limit=100" |jq -r '.rows[]|[.symbol, .position_change_type] |@csv' |sed 's/"//g' |egrep "new|addition|reduction|soldall" |while read position 
+  mycurl "https://whalewisdom.com/filer/holdings?id=$filer&q1=-1&type_filter=1,2,3,4&symbol=&change_filter=1&minimum_ranking=&minimum_shares=&is_etf=0&sc=true&sort=current_mv&order=desc&offset=0&limit=100" | jq -r .rows[].symbol |while read position
   do    
     echo $position","$filer","$performance >> whalewisdom.csv    
   done
@@ -71,7 +72,8 @@ mycurl "$ARK_CSV_URL/THE_3D_PRINTING_ETF_PRNT_HOLDINGS.csv"                     
 mycurl "$ARK_CSV_URL/ARK_ISRAEL_INNOVATIVE_TECHNOLOGY_ETF_IZRL_HOLDINGS.csv"     |egrep IZRL |cut -d',' -f2,4 |egrep -v "IZRL,$" |sed 's/"//g' |awk '{print $1}' >> ark.csv
 
 #SeekingAlpha Latest Long ideas
-mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+" |sed -n '1!p'  |cut -d'/' -f3 |tr '[:lower:]' '[:upper:]' > seekingalphalong.csv
+#mycurl "https://seekingalpha.com/stock-ideas/long-ideas" |grep bull |egrep -o "\/symbol\/[a-zA-Z0-9\-\.]+" |sed -n '1!p'  |cut -d'/' -f3 |tr '[:lower:]' '[:upper:]' > seekingalphalong.csv
+mycurl 'https://seekingalpha.com/api/v3/articles?filter\[category\]=stock-ideas%3A%3Along-ideas&filter\[since\]=0&filter\[until\]=0&include=author%2CprimaryTickers%2CsecondaryTickers&isMounting=true&page\[size\]=40&page\[number\]=1'  |jq  -c  '.included[].links |select (.self |contains("symbol"))' |cut -d'/' -f3 |cut -d'"' -f1 > seekingalphalong.csv
 
 #Gurufocus latest picks
 mycurl https://www.gurufocus.com/guru/latest-picks |egrep '^Buy:|^Add:|Sell:|^Reduce:|^[A-Z]{1,5}$' |egrep -v "USA|RSS|FAQ|API|ETF" |egrep  '^[A-Z]+' |tr '\n' ',' |sed -e's/,Buy:/\nBuy:/g' -e 's/,Reduce:/\nReduce:/g' -e 's/,Sell:/\nSell:/g' -e 's/,Add:/\nAdd:/g' |sed 's/:,/:/g' |egrep -v ':$' > gurufocus.csv
